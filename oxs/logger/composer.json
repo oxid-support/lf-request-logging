@@ -1,0 +1,9 @@
+{
+    "name": "oxid-support/logger",
+    "type": "oxideshop-module",
+    "autoload": {
+        "psr-4": {
+            "OxidSupport\\Logger\\": "src/"
+        }
+    }
+}
