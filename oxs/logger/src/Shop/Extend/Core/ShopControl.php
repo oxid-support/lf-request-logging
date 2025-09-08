@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace OxidSupport\Logger\Shop\Core;
+namespace OxidSupport\Logger\Shop\Extend\Core;
 
 use OxidEsales\Eshop\Core\ShopControl as CoreShopControl;
 use OxidSupport\Logger\Logger\SymbolTracker;

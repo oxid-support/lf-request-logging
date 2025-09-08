@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace OxidSupport\Logger\Controller;
+namespace OxidSupport\Logger\Shop\Extend\Core;
 
 use OxidEsales\Eshop\Application\Controller\FrontendController as CoreFC;
 use OxidSupport\Logger\Logger\ShopLogger;

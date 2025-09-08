@@ -2,9 +2,9 @@
 declare(strict_types=1);
 
 
-namespace OxidSupport\Logger\Bootstrap;
+namespace OxidSupport\Logger\Module;
 
-class Module
+final class Module
 {
     const ID = 'oxslogger';
 }
