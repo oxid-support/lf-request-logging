@@ -1,9 +1,11 @@
 services:
 
+    _defaults:
+        autowire: true
+        public: false
+
     OxidSupport\Logger\Logger\ShopLoggerInterface:
         class: OxidSupport\Logger\Logger\ShopLogger
-        autowire: true
-        public: true
 
     OxidSupport\Logger\Request\CorrelationIdProviderInterface:
         class: OxidSupport\Logger\Request\CorrelationIdProvider
@@ -14,9 +16,11 @@ services:
         arguments:
             - '@OxidSupport\Logger\Request\CorrelationIdProviderInterface'
         public: true
+        autowire: false
 
     OxidSupport\Logger\Logger\ShopLoggerFactory:
         factory: ['OxidSupport\Logger\Logger\ShopLoggerFactory', 'create']
         arguments:
             - '@OxidSupport\Logger\Logger\ShopLoggerInterface'
         public: true
+        autowire: false
