@@ -36,7 +36,7 @@ class LoggerFactory
 
     private static function logfilePath(string $filename): string
     {
-        $filename = sprintf('%s-%s.json', MOdule::ID, $filename);
+        $filename = sprintf('%s-%s.json', Module::ID, $filename);
 
         return
             OX_BASE_PATH
