@@ -3,62 +3,52 @@ declare(strict_types=1);
 
 namespace OxidSupport\Logger\Logger;
 
-use Monolog\Formatter\JsonFormatter;
-use Monolog\Handler\StreamHandler;
-use Monolog\Logger;
+use OxidSupport\Logger\Processor\RequestContextProcessor;
 use Psr\Log\LoggerInterface;
-use OxidEsales\Eshop\Core\Registry;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
-final class ShopLogger
+final class ShopLogger implements ShopLoggerInterface
 {
-    private static ?LoggerInterface $instance = null;
+    public function __construct(
+        #[Autowire(service: 'oxs.logger.request')]
+        private LoggerInterface $logger,
+    ) {}
 
-    public static function get(): LoggerInterface
+    public function create(): void
     {
-        if (self::$instance instanceof LoggerInterface) {
-            return self::$instance;
-        }
-
-        $logFile = self::logFilePath();
+        $logFile = $this->logFilename();
         if (!is_dir($logFile)) {
             @mkdir($logFile, 0775, true);
         }
 
-        $handler = new StreamHandler($logFile . self::logFileName(), Logger::INFO, true, 0664);
-        $handler->setFormatter(new JsonFormatter());
-
-        $logger = new Logger('oxslogger');
-        $logger->pushHandler($handler);
-
-        // Kontext-Processor: immer Request-Kontext anhängen
-        //$logger->pushProcessor(function (array $record): array {
-        //    $record['extra']['context'] = RequestContext::build();
-        //    return $record;
-        //});
-
-        $logger->pushProcessor(new RequestContextProcessor());
+        $this->logger->pushProcessor(new RequestContextProcessor());
 
         // Stacktrace NUR für Aktions-Events
-        $logger->pushProcessor(new StackTraceProcessor(
+        $this->logger->pushProcessor(new StackTraceProcessor(
             maxDepth: (int)($_ENV['OXSL_STACK_DEPTH'] ?? 12),
             includeArgs: false
         ));
-
-        self::$instance = $logger;
-        return self::$instance;
     }
 
-    private static function logFilePath(): string
+    private function logFilename(): string
     {
         return
             OX_BASE_PATH .
-            'log' . DIRECTORY_SEPARATOR .
-            'oxs-logger' . DIRECTORY_SEPARATOR;
+            'log' . DIRECTORY_SEPARATOR;
     }
 
-    private static function logFileName(): string
+    public function logRoute(array $record): void
     {
-        //return RequestContext::requestId() . '.log';
-        return 'oxs-request.json';
+        $this->logger->info('request.route', $record);
+    }
+
+    public function logSymbols(array $record): void
+    {
+        $this->logger->info('request.symbols', $record['symbols']);
+    }
+
+    public function logFinish(array $record): void
+    {
+       $this->logger->info('request.finish', $record);
     }
 }

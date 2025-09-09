@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace OxidSupport\Logger\Processor;
 
-use OxidSupport\Logger\Context\RequestContext;
+use OxidSupport\Logger\Shop\Context\RequestContext;
 
 final class RequestContextProcessor
 {
@@ -22,8 +22,7 @@ final class RequestContextProcessor
             $record['extra']['context'] = RequestContext::build();
         } else {
             // Schlank: nur Korrelationsdaten
-            $record['extra']['requestId'] = RequestContext::requestId();
-             $record['extra']['ts'] = date('c');
+            $record['extra']['ts'] = date('c');
         }
 
         return $record;
