@@ -10,17 +10,17 @@ services:
     OxidSupport\Logger\Request\CorrelationIdProviderInterface:
         class: OxidSupport\Logger\Request\CorrelationIdProvider
 
+    OxidSupport\Logger\Logger\ShopLoggerFactory:
+        factory: ['OxidSupport\Logger\Logger\ShopLoggerFactory', 'create']
+        arguments:
+            - '@OxidSupport\Logger\Logger\ShopLoggerInterface'
+        public: true
+        autowire: false
+
     oxs.logger.request:
         class: Monolog\Logger
         factory: ['OxidSupport\Logger\Logger\LoggerFactory', 'create']
         arguments:
             - '@OxidSupport\Logger\Request\CorrelationIdProviderInterface'
-        public: true
-        autowire: false
-
-    OxidSupport\Logger\Logger\ShopLoggerFactory:
-        factory: ['OxidSupport\Logger\Logger\ShopLoggerFactory', 'create']
-        arguments:
-            - '@OxidSupport\Logger\Logger\ShopLoggerInterface'
         public: true
         autowire: false

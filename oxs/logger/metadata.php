@@ -1,7 +1,6 @@
 <?php
 declare(strict_types=1);
 
-use OxidEsales\Eshop\Application\Controller\FrontendController;
 use OxidEsales\Eshop\Core\ShopControl;
 use OxidSupport\Logger\Module\Module as LoggingFrameworkModule;
 
@@ -16,6 +15,5 @@ $aModule = [
     'author' => 'support@oxid-esales.com',
     'extend' => [
         ShopControl::class        => \OxidSupport\Logger\Shop\Extend\Core\ShopControl::class,
-        FrontendController::class => \OxidSupport\Logger\Shop\Extend\Core\FrontendController::class,
     ]
 ];
