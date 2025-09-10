@@ -1,9 +1,10 @@
 <?php
+
 declare(strict_types=1);
 
 namespace OxidSupport\RequestLogger\CorrelationId;
 
-interface CorrelationIdProviderInterface
+interface CorrelationIdEmitterInterface
 {
-    public function provide(): string;
+    public function emit(string $id): void;
 }

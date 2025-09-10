@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace OxidSupport\RequestLogger\Shop\Extend\Core;
@@ -6,7 +7,6 @@ namespace OxidSupport\RequestLogger\Shop\Extend\Core;
 use OxidEsales\Eshop\Core\Registry;
 use OxidEsales\Eshop\Core\ShopControl as CoreShopControl;
 use OxidEsales\EshopCommunity\Internal\Container\ContainerFactory;
-use OxidSupport\RequestLogger\ShopRequestRecorder\ShopRequestRecorderFactory;
 use OxidSupport\RequestLogger\ShopRequestRecorder\ShopRequestRecorderInterface;
 use OxidSupport\RequestLogger\Logger\SymbolTracker;
 use OxidSupport\RequestLogger\Sanitize\Sanitizer;

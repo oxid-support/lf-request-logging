@@ -1,10 +1,10 @@
 <?php
+
 declare(strict_types=1);
 
 namespace OxidSupport\RequestLogger\ShopRequestRecorder;
 
 use Psr\Log\LoggerInterface;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 final class ShopRequestRecorder implements ShopRequestRecorderInterface
 {

@@ -8,24 +8,28 @@ use Exception;
 use Monolog\Formatter\JsonFormatter;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
-use OxidSupport\RequestLogger\Logger\Processor\CorrelationIdProcessor;
+use OxidSupport\RequestLogger\Logger\Processor\CorrelationIdProcessorInterface;
 use OxidSupport\RequestLogger\Module\Module;
 use OxidSupport\RequestLogger\CorrelationId\CorrelationIdProviderInterface;
 
 class LoggerFactory
 {
+    public function __construct(
+        private CorrelationIdProcessorInterface $correlationIdProcessor,
+        private CorrelationIdProviderInterface $correlationIdProvider,
+    ) {}
+
     /**
      * @throws Exception
      */
-    public function create(
-        CorrelationIdProviderInterface $correlationIdProvider
-    ): Logger {
+    public function create(): Logger
+    {
         $dir = $this->logDirectoryPath();
         $this->ensureLogDirectoryExists($dir);
 
         $handler = new StreamHandler(
             $this->logfilePath(
-                $correlationIdProvider::get()
+                $this->correlationIdProvider->provide()
             )
         );
 
@@ -37,7 +41,7 @@ class LoggerFactory
         $logger->pushHandler($handler);
 
         $logger->pushProcessor(
-            new CorrelationIdProcessor()
+            $this->correlationIdProcessor
         );
 
         return $logger;
@@ -66,7 +70,7 @@ class LoggerFactory
         if (!mkdir($dir, 0775, true) && !is_dir($dir)) {
             // Emit a warning rather than suppressing; avoids failing silently.
             // Using error_log keeps this method independent from $this->logger configuration order.
-            error_log(sprintf('ShopLogger: Failed to create log directory: %s', $dir));
+            error_log(sprintf('ShopLogger: Failed to create log directory: %s', $dir)); //@todo
         }
     }
 }
