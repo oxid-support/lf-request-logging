@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 use OxidEsales\Eshop\Core\ShopControl;
-use OxidSupport\Logger\Module\Module as LoggingFrameworkModule;
+use OxidSupport\RequestLogger\Module\Module as LoggingFrameworkModule;
 
 
 $sMetadataVersion = '2.1';
@@ -14,6 +14,6 @@ $aModule = [
     'version' => '1.0.0',
     'author' => 'support@oxid-esales.com',
     'extend' => [
-        ShopControl::class        => \OxidSupport\Logger\Shop\Extend\Core\ShopControl::class,
+        ShopControl::class => \OxidSupport\RequestLogger\Shop\Extend\Core\ShopControl::class,
     ]
 ];

@@ -2,11 +2,10 @@
 
 declare(strict_types=1);
 
-namespace OxidSupport\Logger\Logger;
+namespace OxidSupport\RequestLogger\ShopRequestRecorder;
 
-interface ShopRequestLoggerInterface
+interface ShopRequestRecorderInterface
 {
-    public function create(): void;
 
     public function logStart(array $record): void;
 

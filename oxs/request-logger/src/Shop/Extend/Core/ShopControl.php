@@ -1,27 +1,28 @@
 <?php
 declare(strict_types=1);
 
-namespace OxidSupport\Logger\Shop\Extend\Core;
+namespace OxidSupport\RequestLogger\Shop\Extend\Core;
 
 use OxidEsales\Eshop\Core\Registry;
 use OxidEsales\Eshop\Core\ShopControl as CoreShopControl;
 use OxidEsales\EshopCommunity\Internal\Container\ContainerFactory;
-use OxidSupport\Logger\Logger\ShopRequestLoggerFactory;
-use OxidSupport\Logger\Logger\ShopRequestLoggerInterface;
-use OxidSupport\Logger\Logger\SymbolTracker;
-use OxidSupport\Logger\Sanitize\Sanitizer;
-use OxidSupport\Logger\Shop\Facade\Facts;
+use OxidSupport\RequestLogger\ShopRequestRecorder\ShopRequestRecorderFactory;
+use OxidSupport\RequestLogger\ShopRequestRecorder\ShopRequestRecorderInterface;
+use OxidSupport\RequestLogger\Logger\SymbolTracker;
+use OxidSupport\RequestLogger\Sanitize\Sanitizer;
+use OxidSupport\RequestLogger\Shop\Facade\Facts;
 
 class ShopControl extends CoreShopControl
 {
     public function start($controllerKey = null, $function = null, $parameters = null, $viewsChain = null): void
     {
-        /** @var ShopRequestLoggerInterface $shopLogger */
-        $shopLogger = ContainerFactory::getInstance()
+        // Do not make it a class property to not interfere in the request lifecycle
+        /** @var ShopRequestRecorderInterface $shopLogger */
+        $recorder = ContainerFactory::getInstance()
             ->getContainer()
-            ->get(ShopRequestLoggerFactory::class);
+            ->get(ShopRequestRecorderInterface::class);
 
-        $this->logstart($shopLogger);
+        $this->logstart($recorder);
 
         SymbolTracker::enable();
         $calculateDurationTimestampStart = microtime(true);
@@ -33,19 +34,19 @@ class ShopControl extends CoreShopControl
             $calculateDurationTimestampStop = microtime(true);
 
             $this->logSymbols(
-                $shopLogger,
+                $recorder,
                 SymbolTracker::report()
             );
 
             $this->logFinish(
-                $shopLogger,
+                $recorder,
                 $calculateDurationTimestampStart,
                 $calculateDurationTimestampStop
             );
         }
     }
 
-    private function logStart(ShopRequestLoggerInterface $shopLogger): void
+    private function logStart(ShopRequestRecorderInterface $recorder): void
     {
         $referer   = $_SERVER['HTTP_REFERER']    ?? null;
         $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? null;
@@ -62,7 +63,7 @@ class ShopControl extends CoreShopControl
         $host   = $_SERVER['HTTP_HOST'] ?? '';
         $uri    = $_SERVER['REQUEST_URI'] ?? '/';
 
-        $shopLogger->logStart([
+        $recorder->logStart([
             'userAgent'  => $userAgent,
             'referer'    => $referer,
             'get'        => $get,
@@ -84,13 +85,13 @@ class ShopControl extends CoreShopControl
         ]);
     }
 
-    private function logSymbols(ShopRequestLoggerInterface $shopLogger, array $symbols): void
+    private function logSymbols(ShopRequestRecorderInterface $recorder, array $symbols): void
     {
-        $shopLogger->logSymbols($symbols);
+        $recorder->logSymbols($symbols);
     }
 
     private function logFinish(
-        ShopRequestLoggerInterface $shopLogger,
+        ShopRequestRecorderInterface $recorder,
         float $calculateDurationStartTimestamp,
         float $calculateDurationStopTimestamp,
     ): void
@@ -99,7 +100,7 @@ class ShopControl extends CoreShopControl
             ($calculateDurationStopTimestamp - $calculateDurationStartTimestamp) * 1000
         );
 
-        $shopLogger->logFinish([
+        $recorder->logFinish([
             'durationMs' => $duration,
             'memoryMb'   => round(memory_get_peak_usage(true) / 1048576, 1),
         ]);

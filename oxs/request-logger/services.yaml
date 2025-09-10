@@ -1,0 +1,22 @@
+services:
+
+    _defaults:
+        autowire: true
+        public: false
+
+    OxidSupport\RequestLogger\Logger\LoggerFactory: ~
+
+    oxs.logger.channel:
+        class: Monolog\Logger
+        factory: ['@OxidSupport\RequestLogger\Logger\LoggerFactory', 'create']
+
+    OxidSupport\RequestLogger\ShopRequestRecorder\ShopRequestRecorder:
+        arguments:
+            $logger: '@oxs.logger.channel'
+
+    OxidSupport\RequestLogger\ShopRequestRecorder\ShopRequestRecorderInterface:
+        alias: 'OxidSupport\RequestLogger\ShopRequestRecorder\ShopRequestRecorder'
+        public: true
+
+    OxidSupport\RequestLogger\CorrelationId\CorrelationIdProviderInterface:
+        class: OxidSupport\RequestLogger\CorrelationId\CorrelationIdProvider

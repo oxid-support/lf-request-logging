@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 
-namespace OxidSupport\Logger\Module;
+namespace OxidSupport\RequestLogger\Module;
 
 final class Module
 {

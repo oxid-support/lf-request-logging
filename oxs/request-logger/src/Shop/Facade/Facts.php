@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 
-namespace OxidSupport\Logger\Shop\Facade;
+namespace OxidSupport\RequestLogger\Shop\Facade;
 
 class Facts
 {

@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 
-namespace OxidSupport\Logger\Request;
+namespace OxidSupport\RequestLogger\CorrelationId;
 
 /**
  * @todo split generation and emitting
