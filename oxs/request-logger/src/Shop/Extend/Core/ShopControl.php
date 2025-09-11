@@ -17,7 +17,6 @@ class ShopControl extends CoreShopControl
     public function start($controllerKey = null, $function = null, $parameters = null, $viewsChain = null): void
     {
         // Do not make it a class property to not interfere in the request lifecycle
-        /** @var ShopRequestRecorderInterface $shopLogger */
         $recorder = ContainerFactory::getInstance()
             ->getContainer()
             ->get(ShopRequestRecorderInterface::class);
