@@ -6,5 +6,5 @@ namespace OxidSupport\RequestLogger\Module;
 
 final class Module
 {
-    const ID = 'oxslogger';
+    const ID = 'oxsrequestlogger';
 }
