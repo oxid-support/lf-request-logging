@@ -1,8 +1,8 @@
 
 
-# OXS Logger
+# Logging Framework: Request Logger
 
-**OXS Logger** is an OXID eShop module that provides **detailed request logging**.  
+**Logging Framework: Request Logger** is an OXID eShop module that provides **detailed request logging**.  
 It captures raw data about controller actions, request parameters, and the classes loaded during the lifecycle of a request.
 
 The goal: create a **complete trace of what happened in the shop** so developers, support engineers, and analysts can reconstruct a user’s actions.  
@@ -11,12 +11,24 @@ Logs are **minimally invasive** and produce **structured JSON entries**, designe
 ---
 
 ## Installation
+
+### Live
 ```bash
-composer config repositories.oxid-support/logger path repo/oxs/logger
-composer require oxid-support/logger:@dev
+composer config repositories.oxid-support/request-logger vcs https://github.com/oxid-support/lf-request-logging.git
+composer require oxid-support/request-logger
 ```
+
+### Dev
 ```bash
-./vendor/bin/oe-console o:m:a oxslogger
+git clone https://github.com/oxid-support/lf-request-logging.git repo/oxs/request-logger
+composer config repositories.oxid-support/logger path repo/oxs/request-logger
+composer require oxid-support/request-logger:@dev
+```
+### General
+
+#### Activation
+```bash
+./vendor/bin/oe-console o:m:a oxsrequestlogger
 ```
 
 ## Features
@@ -40,8 +52,6 @@ composer require oxid-support/logger:@dev
 - **Request Finish Logging**
     - Duration in ms (`durationMs`)
     - Memory usage in MB (`memoryMb`)
-    - Final controller and action
-    - Full request context included for reference
 
 - **Security**
     - Sensitive parameters (passwords, tokens, IDs) are masked
@@ -50,7 +60,7 @@ composer require oxid-support/logger:@dev
 
 ---
 
-## Architecture
+## Architecture Flow
 
 
 ### Diagram (simplified overview)
@@ -59,90 +69,56 @@ Request Start
 │
 ├── request.start  (Controller + Params + Context)
 │
-├── Request Processing …
-│       └── SymbolTracker records new classes
+Request Processing …
+│       └── SymbolTracker records classes
 │
 ├── request.symbols (All loaded classes in load order)
 │
 └── request.finish  (Duration, memory)
 ```
 
+## Building Blocks
 
-The module consists of the following building blocks:
+1. ShopControl (Extension)
+    - Hooks into the OXID request lifecycle (start/terminate)
+    - Emits request.start, request.symbols, request.finish
+    - Guarantees a consistent correlation ID per request
+2. ShopRequestRecorder 
+    - Thin façade around a pre-configured Monolog\Logger service
+    - Keeps the logging call sites minimal and consistent
+3. LoggerFactory
+    - Factory that resolves and prepares the Monolog\Logger logger instance
+    - Configures channel names / handlers (JSON line format)
+    - Pushes processors (e.g., request context, sanitizing) before writing
+    - Ensures the log directory exists and processors are attached
+    - Returns the concrete logger bound as DI service (e.g., oxs.logger.request)
+4. Sanitizer (Processor)
+    - Normalizes GET/POST
+    - Masks sensitive values while keeping parameter keys for diagnostics 
+    - Prevents accidental leakage of secrets in logs
+5. SymbolTracker
+    - Records the set of declared classes/interfaces/traits at request start
+    - Computes the delta at the request end and outputs the exact load order list
+    - Strips OXID aliases, legacy lowercase names and eval’d classes for cleaner analysis
 
-### 1. `ShopLogger`
-- Central logger facade
-- Configures Monolog as JSON logger
-- Provides logger instance to all other components
-
-### 2. `RequestContext`
-- Builds context per request (shop ID, URL, session, user, language, PHP/Shop version, IP)
-- Used in `request.route` and `request.finish`
-- Provides a unique `requestId`
-
-### 3. `SymbolTracker`
-- Records declared classes/interfaces/traits at request start
-- At request end, computes the **delta**
-- Returns a plain list in load order
-- Strips aliases, legacy names, and eval’d classes
-
-### 4. `ShopControl` (Extension)
-- Hooks into the request lifecycle
-- Logs `request.route` at the beginning
-- Logs `request.symbols` and `request.finish` at the end
-- Ensures events are consistently captured
-
-### 5. Sanitizer
-- Normalizes GET/POST input
-- Masks sensitive values but keeps parameter keys
-- Prevents accidental leaks of credentials or tokens
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                           HTTP Request                              │
-└───────────────┬─────────────────────────────────────────────────────┘
-                │  
-                ▼  
-┌───────────────────────┐
-│ ShopControl (OXID)    │  liest/setzt Correlation-ID
-└─────────┬─────────────┘
-          │  
-          ▼
-┌──────────────────────────────┐
-│ ShopLoggerFactory::create()  │
-└─────────┬────────────────────┘
-          │  
-          ▼
-┌──────────────────────────────┐
-│ ShopLogger::create()  │
-└─────────┬────────────────────┘
-          │  checks and creates log dir, 
-          │  pushes processors into the logger object
-          ▼
-┌──────────────────────────────┐
-│ LoggerFactory::create()      │ baut Pfad, legt Ordner an,
-└─────────┬────────────────────┘  konfiguriert Monolog\Logger
-          │
-          ▼
-┌──────────────────────────────┐
-│  Service: oxs.logger.request │  (Monolog\Logger)
-└─────────┬────────────────────┘
-          │  DI
-          ▼
-┌──────────────────────────────┐
-│ ShopLogger (Fassade)         │  pusht Prozessoren (RequestContext,
-└─────────┬────────────────────┘  optional StackTrace nur punktuell)
-          │  write
-          ▼
-┌──────────────────────────────────────────────────────────────┐
-│  OX_BASE_PATH/log/requests/YYYY-MM-DD/<CorrelationID>.json   │
-└──────────────────────────────────────────────────────────────┘
-```
 ---
 
 ## Log Events
 
-A request usually produces three entries:
+A request usually emits three entries:
+
+### `request.start`
+- Contains HTTP method, URI, referer, UA
+- Sanitized get/post
+- OXID context: cl, fnc, lang, edition, PHP/Shop versions
+- Session/user info (masked as needed)
+
+## `request.symbols`
+- symbols: string[] with all newly declared FQCNs in load order
+- Good for diagnosing template/render paths and module extension chains (*_parent)
+
+## `request.finish`
+- durationMs, memoryMb
 
 ### `request.start`
 ```json
@@ -220,6 +196,16 @@ A request usually produces three entries:
     "extra": []
 }
 ```
+
+---
+
+## Output Location
+
+- JSON lines are written under:  
+    OX_BASE_PATH/log/oxs-request-logger/<CorrelationID>.json  
+    (one file per request/correlation ID).
+
+---
 
 ### Benefits for Developers & Support
 * Debugging: See which classes were loaded, in what order, with which controller.
