@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace OxidSupport\RequestLogger\CorrelationId;
 
+use OxidSupport\RequestLogger\CorrelationId\Emitter\EmitterInterface;
+use OxidSupport\RequestLogger\CorrelationId\Resolver\ResolverInterface;
+
 final class CorrelationIdProvider implements CorrelationIdProviderInterface
 {
     public function __construct(
-        private CorrelationIdEmitterInterface $emitter,
+        private EmitterInterface $emitter,
         private CorrelationIdGeneratorInterface $generator,
-        private CorrelationIdResolverInterface $resolver,
+        private ResolverInterface $resolver,
     ) {}
 
     public function provide(): string
