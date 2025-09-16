@@ -7,10 +7,10 @@ namespace OxidSupport\RequestLogger\Shop\Extend\Core;
 use OxidEsales\Eshop\Core\Registry;
 use OxidEsales\Eshop\Core\ShopControl as CoreShopControl;
 use OxidEsales\EshopCommunity\Internal\Container\ContainerFactory;
-use OxidSupport\RequestLogger\ShopRequestRecorder\ShopRequestRecorderInterface;
 use OxidSupport\RequestLogger\Logger\SymbolTracker;
 use OxidSupport\RequestLogger\Sanitize\Sanitizer;
 use OxidSupport\RequestLogger\Shop\Facade\Facts;
+use OxidSupport\RequestLogger\ShopRequestRecorder\ShopRequestRecorderInterface;
 
 class ShopControl extends CoreShopControl
 {
@@ -79,7 +79,7 @@ class ShopControl extends CoreShopControl
             'edition'    => (new Facts())->getEdition(),
             'php'        => PHP_VERSION,
             'oxid'       => '',
-            'cl'         => (string) (Registry::getRequest()->getRequestParameter('cl') ?? ''),    // nach SEO-Auflösung
+            'cl'         => (string) (Registry::getRequest()->getRequestParameter('cl') ?? ''),
             'fnc'        => (string) (Registry::getRequest()->getRequestParameter('fnc') ?? 'render'),
         ]);
     }

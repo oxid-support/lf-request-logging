@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace OxidSupport\RequestLogger\Logger;
 
+use ReflectionClass;
+use Throwable;
+
 /**
- * Minimaler Symbol-Tracker:
- * - merkt sich am Start die vorhandenen Klassen/Interfaces/Traits
- * - liefert am Ende das Delta in der Reihenfolge, wie PHP sie deklariert hat
- * - optional leichter Filter (Alias/Legacy raus), ohne Sortierung, ohne ENV
+ * Minimal symbol tracker:
+ * - remembers the classes/interfaces/traits present at the start
+ * - provides the delta at the end in the order PHP declared them
+ * - optional light filter (remove alias/legacy), without sorting, without ENV
  */
 final class SymbolTracker
 {
@@ -20,7 +23,6 @@ final class SymbolTracker
     private static array $traitsBefore = [];
     private static bool $enabled = false;
 
-    /** Einmal am Request-Beginn aufrufen (idempotent). */
     public static function enable(): void
     {
         if (self::$enabled) {
@@ -34,8 +36,8 @@ final class SymbolTracker
     }
 
     /**
-     * Liefert die neu deklarierten Symbole in Lade-Reihenfolge.
-     * @param bool $strict Wenn true, werden Alias/eval per Reflection herausgefiltert (etwas teurer).
+     * Returns the newly declared symbols in load order.
+     * @param bool $strict If true, aliases/eval are filtered out via reflection (slightly more expensive).
      * @return array{symbols: list<string>}
      */
     public static function report(bool $strict = false): array
@@ -44,18 +46,17 @@ final class SymbolTracker
         $interfacesNew = array_values(array_diff(get_declared_interfaces(), self::$interfacesBefore));
         $traitsNew     = array_values(array_diff(get_declared_traits(),     self::$traitsBefore));
 
-        // Hintereinander kleben – Reihenfolge bleibt wie deklariert
+        // Concatenate sequentially – order remains as declared
         $symbols = array_merge($classesNew, $interfacesNew, $traitsNew);
 
-        // Leichter, schneller Filter
         $symbols = array_values(array_filter($symbols, static function (string $name): bool {
             $lower = strtolower($name);
 
-            // *_parent-Aliasse raus
+            // remove *_parent aliases
             if (str_ends_with($lower, '_parent')) {
                 return false;
             }
-            // reine Legacy-Kurzformen (z. B. "oxuser") raus
+            // pure legacy short forms, remove outdated class names (e.g. "oxuser")
             if ($name === $lower && !str_contains($name, '\\')) {
                 return false;
             }
@@ -63,18 +64,18 @@ final class SymbolTracker
         }));
 
         if ($strict) {
-            // Optional: Aliasse/eval (ohne Datei) rausfiltern
+            // Optional: filter out aliases/eval (when no file is existing) // @todo
             $out = [];
             foreach ($symbols as $name) {
                 try {
-                    $ref = new \ReflectionClass($name);
+                    $ref = new ReflectionClass($name);
                     $file = $ref->getFileName();
                     if (!is_string($file) || $file === '') {
                         continue; // alias/eval
                     }
                     $out[] = $name;
-                } catch (\Throwable) {
-                    // sicherheitshalber verwerfen
+                } catch (Throwable) {
+                    // discard as a precaution
                 }
             }
             $symbols = $out;

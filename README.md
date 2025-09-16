@@ -37,7 +37,7 @@ composer require oxid-support/request-logger:@dev
     - Captures controller (`cl`) and action (`fnc`)
     - Logs referer, user agent, GET and POST parameters
     - Sensitive values masked (`[redacted]`), keys remain visible
-    - No whitelist: all parameters are logged
+    - No allowlist: all parameters are logged
     - Value length limited to 500 characters
 
 - **Symbol Tracking**
@@ -209,6 +209,6 @@ A request usually emits three entries:
 
 ### Benefits for Developers & Support
 * Debugging: See which classes were loaded, in what order, with which controller.
-* Support cases: Reconstruct exactly what the user did (controller + parameters).
+* Support cases: Reconstruct exactly what the user did (controller plus parameters).
 * Performance monitoring: Duration and memory are logged per request.
 * Compatibility checks: Identify which modules extend which classes (*_parent chains).

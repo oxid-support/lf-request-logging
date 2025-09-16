@@ -29,9 +29,6 @@ services:
     OxidSupport\RequestLogger\CorrelationId\CorrelationIdGeneratorInterface:
         class: OxidSupport\RequestLogger\CorrelationId\CorrelationIdGenerator
 
-    OxidSupport\RequestLogger\CorrelationId\CorrelationIdValidatorInterface:
-        class: OxidSupport\RequestLogger\CorrelationId\CorrelationIdValidator
-
     OxidSupport\RequestLogger\Logger\Processor\CorrelationIdProcessorInterface:
         class: OxidSupport\RequestLogger\Logger\Processor\CorrelationIdProcessor
 

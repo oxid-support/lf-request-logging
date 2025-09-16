@@ -22,16 +22,15 @@ class Sanitizer
             $key = is_string($k) ? $k : (string)$k;
 
             if ($isBlocked($key)) {
-                // sensible Keys: Wert nie loggen (egal welcher Typ)
                 $out[$key] = $blocked;
                 continue;
             }
 
             if (is_scalar($v) || $v === null) {
-                // Strings begrenzen
+                // cut strings
                 $out[$key] = is_string($v) && strlen($v) > 500 ? substr($v, 0, 500) . '…' : $v;
             } elseif (is_array($v)) {
-                // Arrays kompakt: erste Ebene key=value (max. 20)
+                // Arrays only the first level: key=value (max. 20)
                 $pairs = [];
                 $i = 0;
                 foreach ($v as $ak => $av) {

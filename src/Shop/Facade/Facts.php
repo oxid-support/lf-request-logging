@@ -6,7 +6,7 @@ namespace OxidSupport\RequestLogger\Shop\Facade;
 
 class Facts
 {
-    public function getEdition()
+    public function getEdition(): string
     {
        return (new \OxidEsales\Facts\Facts())->getEdition();
     }

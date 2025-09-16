@@ -6,7 +6,6 @@ namespace OxidSupport\RequestLogger\ShopRequestRecorder;
 
 interface ShopRequestRecorderInterface
 {
-
     public function logStart(array $record): void;
 
     public function logSymbols(array $record): void;
