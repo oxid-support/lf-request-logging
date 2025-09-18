@@ -20,4 +20,13 @@ class ModuleSettingFacade implements ModuleSettingFacadeInterface
             Module::ID
         );
     }
+
+    public function getRedactItems(): array
+    {
+        return
+            $this->moduleSettingService->getCollection(
+                Module::ID . '_redact',
+                Module::ID
+            );
+    }
 }

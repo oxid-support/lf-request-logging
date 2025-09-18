@@ -6,7 +6,7 @@ namespace OxidSupport\RequestLogger\Shop\Extend\Core;
 
 use OxidEsales\Eshop\Core\ShopControl as CoreShopControl;
 use OxidEsales\EshopCommunity\Internal\Container\ContainerFactory;
-use OxidSupport\RequestLogger\Logger\Security\SensitiveDataRedactor;
+use OxidSupport\RequestLogger\Logger\Security\SensitiveDataRedactorInterface;
 use OxidSupport\RequestLogger\Logger\ShopRequestRecorder\ShopRequestRecorderInterface;
 use OxidSupport\RequestLogger\Logger\SymbolTracker;
 use OxidSupport\RequestLogger\Shop\Facade\FacadeInterface;
@@ -51,12 +51,15 @@ class ShopControl extends CoreShopControl
             ->getContainer()
             ->get(FacadeInterface::class);
 
+        $redactor = ContainerFactory::getInstance()
+            ->getContainer()
+            ->get(SensitiveDataRedactorInterface::class);
+
         $referer   = $_SERVER['HTTP_REFERER']    ?? null;
         $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? null;
 
-        $sanitizer = new SensitiveDataRedactor();
-        $get  = $sanitizer->sanitize($_GET ?? []);
-        $post = $sanitizer->sanitize($_POST ?? []);
+        $get  = $redactor->redact($_GET ?? []);
+        $post = $redactor->redact($_POST ?? []);
 
         $scheme = $_SERVER['REQUEST_SCHEME'] ?? (($_SERVER['HTTPS'] ?? '') === 'on' ? 'https' : 'http');
         $host   = $_SERVER['HTTP_HOST'] ?? '';

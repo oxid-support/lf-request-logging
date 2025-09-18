@@ -2,17 +2,22 @@
 
 declare(strict_types=1);
 
-
 namespace OxidSupport\RequestLogger\Logger\Security;
+
+use OxidSupport\RequestLogger\Shop\Facade\ModuleSettingFacadeInterface;
 
 class SensitiveDataRedactor
 {
-    public function sanitize(array $values): array
+    public function __construct(
+        private ModuleSettingFacadeInterface $moduleSettingFacade
+    ) {}
+
+    public function redact(array $values): array
     {
-        $blocklistLower = [
-            'lgn_pwd',
-            'lgn_pwd2',
-        ];
+        $blocklistLower = array_map(
+            'strtolower',
+            $this->moduleSettingFacade->getRedactItems(),
+        );
 
         $out = [];
 
@@ -24,14 +29,14 @@ class SensitiveDataRedactor
                 continue;
             }
 
-            // Arrays/Objekte vollständig als JSON (keine Limits, nichts abschneiden) //@todo
+            // Arrays/objects fully as JSON (no limits, nothing truncated)
             if (is_array($v) || is_object($v)) {
                 $json = json_encode($v, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
                 $out[$key] = $json !== false ? $json : '[unserializable]';
                 continue;
             }
 
-            // Strings/Skalare/NULL: unverändert
+            // Strings/Scalars/NULL: unchanged
             $out[$key] = $v;
         }
 

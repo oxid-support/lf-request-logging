@@ -7,4 +7,6 @@ namespace OxidSupport\RequestLogger\Shop\Facade;
 interface ModuleSettingFacadeInterface
 {
     public function getLogLevel(): string;
+
+    public function getRedactItems(): array;
 }

@@ -9,6 +9,10 @@ services:
         autowire: true
         public: false
 
+    OxidSupport\RequestLogger\Logger\Security\SensitiveDataRedactorInterface:
+        class: OxidSupport\RequestLogger\Logger\Security\SensitiveDataRedactor
+        public: true
+
     OxidSupport\RequestLogger\Shop\Facade\ModuleSettingFacadeInterface:
         class: OxidSupport\RequestLogger\Shop\Facade\ModuleSettingFacade
 
