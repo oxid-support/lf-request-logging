@@ -26,8 +26,8 @@ services:
         arguments:
             $logger: '@oxs.logger.channel'
 
-    OxidSupport\RequestLogger\Shop\Facade\FacadeInterface:
-        class: OxidSupport\RequestLogger\Shop\Facade\Facade
+    OxidSupport\RequestLogger\Shop\Facade\ShopFacadeInterface:
+        class: OxidSupport\RequestLogger\Shop\Facade\ShopFacade
         public: true
 
     OxidSupport\RequestLogger\Logger\ShopRequestRecorder\ShopRequestRecorderInterface:
@@ -81,3 +81,13 @@ services:
     OxidSupport\RequestLogger\Logger\CorrelationId\Resolver\Composite\CompositeResolver:
         arguments:
             $resolvers: !tagged_iterator 'oxs.cid.resolver'
+
+    OxidSupport\RequestLogger\Shop\Compatibility\ModuleSettings\Factory: ~
+
+    OxidSupport\RequestLogger\Shop\Compatibility\ModuleSettings\ModuleSettingsPort:
+        factory: ['@OxidSupport\RequestLogger\Shop\Compatibility\ModuleSettings\Factory', 'create']
+
+    OxidSupport\RequestLogger\Shop\Compatibility\DiContainer\Factory: ~
+
+    OxidSupport\RequestLogger\Shop\Compatibility\DiContainer\DiContainerPort:
+        factory: [ 'OxidSupport\RequestLogger\Shop\Compatibility\DiContainer\Factory', 'create' ]

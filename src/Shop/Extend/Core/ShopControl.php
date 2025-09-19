@@ -9,7 +9,8 @@ use OxidEsales\EshopCommunity\Internal\Container\ContainerFactory;
 use OxidSupport\RequestLogger\Logger\Security\SensitiveDataRedactorInterface;
 use OxidSupport\RequestLogger\Logger\ShopRequestRecorder\ShopRequestRecorderInterface;
 use OxidSupport\RequestLogger\Logger\SymbolTracker;
-use OxidSupport\RequestLogger\Shop\Facade\FacadeInterface;
+use OxidSupport\RequestLogger\Shop\Compatibility\DiContainer\Factory as DiContainerFactory;
+use OxidSupport\RequestLogger\Shop\Facade\ShopFacadeInterface;
 
 class ShopControl extends CoreShopControl
 {
@@ -47,13 +48,9 @@ class ShopControl extends CoreShopControl
         ShopRequestRecorderInterface $recorder,
     ): void {
 
-        $facade = ContainerFactory::getInstance()
-            ->getContainer()
-            ->get(FacadeInterface::class);
-
-        $redactor = ContainerFactory::getInstance()
-            ->getContainer()
-            ->get(SensitiveDataRedactorInterface::class);
+        $container = DiContainerFactory::create();
+        $facade = $container->get(ShopFacadeInterface::class);
+        $redactor = $container->get(SensitiveDataRedactorInterface::class);
 
         $referer   = $_SERVER['HTTP_REFERER']    ?? null;
         $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? null;

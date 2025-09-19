@@ -12,7 +12,7 @@ use OxidEsales\Eshop\Core\ShopVersion;
 use OxidEsales\Facts\Facts;
 use Psr\Log\LoggerInterface;
 
-class Facade implements FacadeInterface
+class ShopFacade implements ShopFacadeInterface
 {
     public function getShopId(): int
     {

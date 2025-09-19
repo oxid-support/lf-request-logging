@@ -4,18 +4,18 @@ declare(strict_types=1);
 
 namespace OxidSupport\RequestLogger\Shop\Facade;
 
-use OxidEsales\EshopCommunity\Internal\Framework\Module\Facade\ModuleSettingServiceInterface;
 use OxidSupport\RequestLogger\Module\Module;
+use OxidSupport\RequestLogger\Shop\Compatibility\ModuleSettings\ModuleSettingsPort;
 
 class ModuleSettingFacade implements ModuleSettingFacadeInterface
 {
     public function __construct(
-        private ModuleSettingServiceInterface $moduleSettingService
+        private ModuleSettingsPort $moduleSettingPort,
     ) {}
 
     public function getLogLevel(): string
     {
-        return (string) $this->moduleSettingService->getString(
+        return $this->moduleSettingPort->getString(
             Module::ID . '_log-level',
             Module::ID
         );
@@ -24,7 +24,7 @@ class ModuleSettingFacade implements ModuleSettingFacadeInterface
     public function getRedactItems(): array
     {
         return
-            $this->moduleSettingService->getCollection(
+            $this->moduleSettingPort->getCollection(
                 Module::ID . '_redact',
                 Module::ID
             );

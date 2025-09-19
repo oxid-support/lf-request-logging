@@ -11,15 +11,15 @@ use Monolog\Logger;
 use OxidSupport\RequestLogger\Logger\CorrelationId\CorrelationIdProviderInterface;
 use OxidSupport\RequestLogger\Logger\Processor\CorrelationIdProcessorInterface;
 use OxidSupport\RequestLogger\Module\Module;
-use OxidSupport\RequestLogger\Shop\Facade\FacadeInterface;
 use OxidSupport\RequestLogger\Shop\Facade\ModuleSettingFacadeInterface;
+use OxidSupport\RequestLogger\Shop\Facade\ShopFacadeInterface;
 
 class LoggerFactory
 {
     public function __construct(
         private CorrelationIdProcessorInterface $correlationIdProcessor,
         private CorrelationIdProviderInterface $correlationIdProvider,
-        private FacadeInterface $facade,
+        private ShopFacadeInterface $facade,
         private ModuleSettingFacadeInterface $moduleSettingFacade
     ) {}
 
