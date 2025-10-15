@@ -21,7 +21,7 @@ composer require oxid-support/request-logger
 ### Dev
 ```bash
 git clone https://github.com/oxid-support/lf-request-logging.git repo/oxs/request-logger
-composer config repositories.oxid-support/logger path repo/oxs/request-logger
+composer config repositories.oxid-support/request-logger path repo/oxs/request-logger
 composer require oxid-support/request-logger:@dev
 ```
 ### General
