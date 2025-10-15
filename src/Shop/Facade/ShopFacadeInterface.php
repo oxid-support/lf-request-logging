@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace OxidSupport\RequestLogger\Shop\Facade;
 
+use Psr\Log\LoggerInterface;
+
 interface ShopFacadeInterface
 {
     public function getShopId(): int;
@@ -23,4 +25,8 @@ interface ShopFacadeInterface
     public function getUsername(): ?string;
 
     public function getRequestParameter(string $name): ?string;
+
+    public function getLogsPath(): string;
+
+    public function getLogger(): LoggerInterface;
 }
