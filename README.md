@@ -394,12 +394,3 @@ class HeaderEmitterTest extends TestCase
     }
 }
 ```
-
-**Benefits:**
-- ✅ No Xdebug dependency
-- ✅ No external mocking libraries
-- ✅ Uses only OXID-provided tools (PHPUnit)
-- ✅ Works with PHP 5.3+
-- ✅ Consistent across all environments
-
-See `tests/Unit/Logger/CorrelationId/Emitter/HeaderEmitterTest.php` and `CookieEmitterTest.php` for complete implementation with detailed inline documentation.
