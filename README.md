@@ -26,6 +26,12 @@ composer require oxid-support/request-logger:@dev
 ```
 ### General
 
+**Important!**   
+Before activating the module, clear the shop’s cache first.
+```bash
+./vendor/bin/oe-console o:c:c 
+```
+
 #### Activation
 ```bash
 ./vendor/bin/oe-console o:m:a oxsrequestlogger
