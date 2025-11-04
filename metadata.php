@@ -45,6 +45,7 @@ It records key request data such as visited pages, parameters, and context, maki
                 'pwd',
                 'lgn_pwd',
                 'lgn_pwd2',
+                'newPassword',
             ],
         ],
     ],
