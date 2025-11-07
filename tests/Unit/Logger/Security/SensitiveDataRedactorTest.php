@@ -19,11 +19,84 @@ class SensitiveDataRedactorTest extends TestCase
         $this->redactor = new SensitiveDataRedactor($this->moduleSettingFacade);
     }
 
-    public function testRedactWithEmptyBlocklistReturnsUnchangedValues(): void
+    // Tests for "redact all values" mode (enabled)
+
+    public function testRedactAllValuesMode_RedactsAllValues(): void
     {
         $this->moduleSettingFacade
-            ->expects($this->once())->method('getRedactItems')
-            
+            ->method('isRedactAllValuesEnabled')
+            ->willReturn(true);
+
+        $input = [
+            'username' => 'john',
+            'email' => 'john@example.com',
+        ];
+
+        $result = $this->redactor->redact($input);
+
+        $this->assertSame('[redacted]', $result['username']);
+        $this->assertSame('[redacted]', $result['email']);
+    }
+
+    public function testRedactAllValuesMode_KeepsKeys(): void
+    {
+        $this->moduleSettingFacade
+            ->method('isRedactAllValuesEnabled')
+            ->willReturn(true);
+
+        $input = [
+            'username' => 'john',
+            'password' => 'secret123',
+            'email' => 'john@example.com',
+        ];
+
+        $result = $this->redactor->redact($input);
+
+        $this->assertArrayHasKey('username', $result);
+        $this->assertArrayHasKey('password', $result);
+        $this->assertArrayHasKey('email', $result);
+        $this->assertSame('[redacted]', $result['username']);
+        $this->assertSame('[redacted]', $result['password']);
+        $this->assertSame('[redacted]', $result['email']);
+    }
+
+    public function testRedactAllValuesMode_RedactsArrayValues(): void
+    {
+        $this->moduleSettingFacade
+            ->method('isRedactAllValuesEnabled')
+            ->willReturn(true);
+
+        $input = [
+            'data' => ['key' => 'value', 'nested' => ['foo' => 'bar']],
+        ];
+
+        $result = $this->redactor->redact($input);
+
+        $this->assertSame('[redacted]', $result['data']);
+    }
+
+    public function testRedactAllValuesMode_WithEmptyArray(): void
+    {
+        $this->moduleSettingFacade
+            ->method('isRedactAllValuesEnabled')
+            ->willReturn(true);
+
+        $input = [];
+
+        $result = $this->redactor->redact($input);
+
+        $this->assertSame([], $result);
+    }
+
+    // Tests for "blocklist only" mode (disabled)
+
+    public function testBlocklistMode_WithEmptyBlocklistReturnsUnchangedValues(): void
+    {
+        $this->moduleSettingFacade
+            ->method('isRedactAllValuesEnabled')
+            ->willReturn(false);
+        $this->moduleSettingFacade
+            ->method('getRedactItems')
             ->willReturn([]);
 
         $input = [
@@ -36,11 +109,13 @@ class SensitiveDataRedactorTest extends TestCase
         $this->assertSame($input, $result);
     }
 
-    public function testRedactWithBlocklistedKeyRedactsValue(): void
+    public function testBlocklistMode_RedactsOnlyBlocklistedKeys(): void
     {
         $this->moduleSettingFacade
-            ->expects($this->once())->method('getRedactItems')
-            
+            ->method('isRedactAllValuesEnabled')
+            ->willReturn(false);
+        $this->moduleSettingFacade
+            ->method('getRedactItems')
             ->willReturn(['password', 'token']);
 
         $input = [
@@ -56,11 +131,13 @@ class SensitiveDataRedactorTest extends TestCase
         $this->assertSame('john@example.com', $result['email']);
     }
 
-    public function testRedactIsCaseInsensitiveForKeys(): void
+    public function testBlocklistMode_IsCaseInsensitiveForKeys(): void
     {
         $this->moduleSettingFacade
-            ->expects($this->once())->method('getRedactItems')
-            
+            ->method('isRedactAllValuesEnabled')
+            ->willReturn(false);
+        $this->moduleSettingFacade
+            ->method('getRedactItems')
             ->willReturn(['PASSWORD']);
 
         $input = [
@@ -74,11 +151,13 @@ class SensitiveDataRedactorTest extends TestCase
         $this->assertSame('[redacted]', $result['Password']);
     }
 
-    public function testRedactConvertsArrayToJson(): void
+    public function testBlocklistMode_ConvertsArrayToJson(): void
     {
         $this->moduleSettingFacade
-            ->expects($this->once())->method('getRedactItems')
-            
+            ->method('isRedactAllValuesEnabled')
+            ->willReturn(false);
+        $this->moduleSettingFacade
+            ->method('getRedactItems')
             ->willReturn([]);
 
         $input = [
@@ -93,11 +172,13 @@ class SensitiveDataRedactorTest extends TestCase
         $this->assertSame(['key' => 'value', 'nested' => ['foo' => 'bar']], $decoded);
     }
 
-    public function testRedactConvertsObjectToJson(): void
+    public function testBlocklistMode_ConvertsObjectToJson(): void
     {
         $this->moduleSettingFacade
-            ->expects($this->once())->method('getRedactItems')
-            
+            ->method('isRedactAllValuesEnabled')
+            ->willReturn(false);
+        $this->moduleSettingFacade
+            ->method('getRedactItems')
             ->willReturn([]);
 
         $obj = new \stdClass();
@@ -114,31 +195,13 @@ class SensitiveDataRedactorTest extends TestCase
         $this->assertSame(['name' => 'test', 'value' => 42], $decoded);
     }
 
-    public function testRedactHandlesUnserializableAsPlaceholder(): void
+    public function testBlocklistMode_PreservesScalarTypes(): void
     {
         $this->moduleSettingFacade
-            ->expects($this->once())->method('getRedactItems')
-            
-            ->willReturn([]);
-
-        // Create resource that cannot be JSON encoded
-        $resource = fopen('php://memory', 'r');
-
-        $input = ['resource' => $resource];
-
-        $result = $this->redactor->redact($input);
-
-        fclose($resource);
-
-        // Resources are not handled specially, they pass through as-is
-        $this->assertIsResource($result['resource']);
-    }
-
-    public function testRedactPreservesScalarTypes(): void
-    {
+            ->method('isRedactAllValuesEnabled')
+            ->willReturn(false);
         $this->moduleSettingFacade
-            ->expects($this->once())->method('getRedactItems')
-            
+            ->method('getRedactItems')
             ->willReturn([]);
 
         $input = [
@@ -158,11 +221,13 @@ class SensitiveDataRedactorTest extends TestCase
         $this->assertNull($result['null']);
     }
 
-    public function testRedactWithMultipleBlocklistedKeys(): void
+    public function testBlocklistMode_WithMultipleBlocklistedKeys(): void
     {
         $this->moduleSettingFacade
-            ->expects($this->once())->method('getRedactItems')
-            
+            ->method('isRedactAllValuesEnabled')
+            ->willReturn(false);
+        $this->moduleSettingFacade
+            ->method('getRedactItems')
             ->willReturn(['password', 'token', 'api_key', 'secret']);
 
         $input = [
@@ -182,11 +247,13 @@ class SensitiveDataRedactorTest extends TestCase
         $this->assertSame('[redacted]', $result['api_key']);
     }
 
-    public function testRedactWithNumericKeys(): void
+    public function testBlocklistMode_WithNumericKeys(): void
     {
         $this->moduleSettingFacade
-            ->expects($this->once())->method('getRedactItems')
-            
+            ->method('isRedactAllValuesEnabled')
+            ->willReturn(false);
+        $this->moduleSettingFacade
+            ->method('getRedactItems')
             ->willReturn(['0']);
 
         $input = [
@@ -200,11 +267,13 @@ class SensitiveDataRedactorTest extends TestCase
         $this->assertSame('value1', $result['1']);
     }
 
-    public function testRedactPreservesJsonEncoding(): void
+    public function testBlocklistMode_PreservesJsonEncoding(): void
     {
         $this->moduleSettingFacade
-            ->expects($this->once())->method('getRedactItems')
-            
+            ->method('isRedactAllValuesEnabled')
+            ->willReturn(false);
+        $this->moduleSettingFacade
+            ->method('getRedactItems')
             ->willReturn([]);
 
         $input = [

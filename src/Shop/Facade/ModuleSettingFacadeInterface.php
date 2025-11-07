@@ -10,6 +10,8 @@ interface ModuleSettingFacadeInterface
 
     public function getRedactItems(): array;
 
+    public function isRedactAllValuesEnabled(): bool;
+
     public function isLogFrontendEnabled(): bool;
 
     public function isLogAdminEnabled(): bool;

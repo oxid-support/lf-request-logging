@@ -30,6 +30,14 @@ class ModuleSettingFacade implements ModuleSettingFacadeInterface
             );
     }
 
+    public function isRedactAllValuesEnabled(): bool
+    {
+        return $this->moduleSettingPort->getBoolean(
+            Module::ID . '_redact-all-values',
+            Module::ID
+        );
+    }
+
     public function isLogFrontendEnabled(): bool
     {
         return $this->moduleSettingPort->getBoolean(

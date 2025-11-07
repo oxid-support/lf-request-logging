@@ -50,5 +50,11 @@ It records key request data such as visited pages, parameters, and context, maki
                 'newPassword',
             ],
         ],
+        [
+            'group' => RequestLoggerModule::ID . '_main',
+            'name' => RequestLoggerModule::ID . '_redact-all-values',
+            'type' => 'bool',
+            'value' => true,
+        ],
     ],
 ];

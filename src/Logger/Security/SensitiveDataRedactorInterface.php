@@ -6,5 +6,5 @@ namespace OxidSupport\RequestLogger\Logger\Security;
 
 interface SensitiveDataRedactorInterface
 {
-    public function sanitize(array $values): array;
+    public function redact(array $values): array;
 }

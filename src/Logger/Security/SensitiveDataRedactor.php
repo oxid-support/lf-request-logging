@@ -6,13 +6,36 @@ namespace OxidSupport\RequestLogger\Logger\Security;
 
 use OxidSupport\RequestLogger\Shop\Facade\ModuleSettingFacadeInterface;
 
-class SensitiveDataRedactor
+class SensitiveDataRedactor implements SensitiveDataRedactorInterface
 {
     public function __construct(
         private ModuleSettingFacadeInterface $moduleSettingFacade
     ) {}
 
     public function redact(array $values): array
+    {
+        // If redact all values is enabled, redact everything
+        if ($this->moduleSettingFacade->isRedactAllValuesEnabled()) {
+            return $this->redactAllValues($values);
+        }
+
+        // Otherwise, only redact specific keys from the blocklist
+        return $this->redactBlocklistedKeys($values);
+    }
+
+    private function redactAllValues(array $values): array
+    {
+        $out = [];
+
+        foreach ($values as $k => $v) {
+            $key = (string) $k;
+            $out[$key] = '[redacted]';
+        }
+
+        return $out;
+    }
+
+    private function redactBlocklistedKeys(array $values): array
     {
         $blocklistLower = array_map(
             'strtolower',

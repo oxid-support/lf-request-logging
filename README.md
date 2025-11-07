@@ -54,9 +54,10 @@ Before activating the module, clear the shop’s cache first.
 - **Request Route Logging**
     - Records controller (`cl`) and action (`fnc`)
     - Logs referer, user agent, GET and POST parameters
-    - Sensitive values masked (`[redacted]`), keys remain visible
+    - **Configurable redaction**: Choose between redacting all values (default) or selective redaction of sensitive parameters
+    - Keys always remain visible for diagnostics
     - Arrays/objects converted to JSON (no length limits)
-    - Scalar values logged unchanged (no truncation)
+    - Scalar values logged unchanged when selective redaction is enabled
 
 - **Correlation ID Tracking**
     - Unique ID assigned to each request for tracing across multiple requests
@@ -79,7 +80,8 @@ Before activating the module, clear the shop’s cache first.
     - Memory usage in MB (`memoryMb`)
 
 - **Security & Privacy**
-    - Sensitive parameters (passwords, tokens, IDs) are masked with `[redacted]`
+    - **Default maximum privacy**: All parameter values redacted by default
+    - **Optional selective redaction**: Configure specific sensitive parameters (passwords, tokens, IDs) to mask
     - No session secrets or authentication data in logs
     - All logs stored locally on server filesystem only
     - No data transmission to external services
@@ -112,9 +114,18 @@ The module provides configurable settings accessible via OXID Admin → Extensio
 
 ### 4. Redact
 - **Type**: Array
-- **Default**: `['pwd', 'lgn_pwd', 'lgn_pwd2']`
+- **Default**: `['pwd', 'lgn_pwd', 'lgn_pwd2', 'newPassword']`
 - **Description**: List of parameter names (case-insensitive) whose values should be masked as `[redacted]` in logs. Add sensitive parameter names like passwords, tokens, API keys, etc.
 - **Example**: Add `api_key`, `token`, `password`, `credit_card` to protect sensitive data
+- **Note**: This setting only applies when "Redact all values" is disabled. If "Redact all values" is enabled, all parameter values are redacted regardless of this list.
+
+### 5. Redact all values
+- **Type**: Boolean (checkbox)
+- **Default**: `true` (enabled)
+- **Description**: When enabled, redacts ALL request parameter values (GET/POST) in logs, showing only parameter keys. When disabled, only parameters listed in the "Redact" setting are masked. This provides maximum privacy protection by default.
+- **Use Cases**:
+  - **Enabled (default)**: Maximum privacy - all parameter values are hidden, only keys are visible. Suitable for production environments with strict privacy requirements.
+  - **Disabled**: Selective redaction - only sensitive parameters from the "Redact" list are masked, other values are logged. Useful for debugging and development when you need to see actual parameter values.
 
 **Module Settings Location**: The settings are stored in OXID's module configuration and can be managed via:
 - Admin interface (recommended)
@@ -156,10 +167,12 @@ Request Processing …
     - Ensures the log directory exists and processors are attached
     - Returns the concrete logger bound as DI service
 4. SensitiveDataRedactor
-    - Redacts sensitive values in GET/POST parameters based on configurable blocklist
-    - Masks sensitive values while keeping parameter keys for diagnostics
-    - Handles arrays/objects by converting to JSON
-    - Protects sensitive data in logs
+    - **Two redaction modes**:
+        - **Redact all values** (default): Masks all parameter values, keeping only keys
+        - **Selective redaction**: Masks only parameters matching the configurable blocklist
+    - Keeps parameter keys visible for diagnostics
+    - Handles arrays/objects by converting to JSON (when selective redaction is enabled)
+    - Provides flexible privacy protection based on your requirements
 5. SymbolTracker
     - Records the set of declared classes/interfaces/traits at request start
     - Computes the delta at the request end and outputs the exact load order list
