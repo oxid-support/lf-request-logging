@@ -36,7 +36,9 @@ class LoggerFactory
             $this->logFilePath(
                 $this->correlationIdProvider->provide()
             ),
-            $this->moduleSettingFacade->getLogLevel()
+            $this->mapLogLevelToMonologLevel(
+                $this->moduleSettingFacade->getLogLevel()
+            )
         );
 
         $handler->setFormatter(
@@ -51,6 +53,15 @@ class LoggerFactory
         );
 
         return $logger;
+    }
+
+    private function mapLogLevelToMonologLevel(string $level): int
+    {
+        return match ($level) {
+            'standard' => Logger::INFO,
+            'detailed' => Logger::DEBUG,
+            default => Logger::INFO,
+        };
     }
 
     private function logFilePath(string $filename): string

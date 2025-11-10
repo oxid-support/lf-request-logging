@@ -24,8 +24,8 @@ It records key request data such as visited pages, parameters, and context, maki
             'group' => RequestLoggerModule::ID . '_main',
             'name' => RequestLoggerModule::ID . '_log-level',
             'type' => 'select',
-            'constraints' => 'debug|info',
-            'value' => 'info',
+            'constraints' => 'standard|detailed',
+            'value' => 'standard',
         ],
         [
             'group' => RequestLoggerModule::ID . '_main',

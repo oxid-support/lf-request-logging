@@ -94,11 +94,11 @@ The module provides configurable settings accessible via OXID Admin → Extensio
 
 ### 1. Log Level
 - **Type**: Select dropdown
-- **Options**: `debug` | `info`
-- **Default**: `info`
-- **Description**: Controls the minimum log level.
-  - `info` - Logs request.start and request.finish (recommended for production)
-  - `debug` - Additionally logs request.symbols (verbose, use for debugging)
+- **Options**: `standard` | `detailed`
+- **Default**: `standard`
+- **Description**: Controls the verbosity of logging.
+  - `standard` - Logs request data and performance (request.start and request.finish).
+  - `detailed` - Additionally logs symbol tracking (request.symbols) showing all classes/interfaces/traits loaded during the request. Use for deep analysis and troubleshooting.
 
 ### 2. Log Frontend Requests
 - **Type**: Boolean (checkbox)
