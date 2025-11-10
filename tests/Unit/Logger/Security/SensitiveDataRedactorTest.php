@@ -88,6 +88,70 @@ class SensitiveDataRedactorTest extends TestCase
         $this->assertSame([], $result);
     }
 
+    public function testRedactAllValuesMode_DoesNotRedactClParameter(): void
+    {
+        $this->moduleSettingFacade
+            ->method('isRedactAllValuesEnabled')
+            ->willReturn(true);
+
+        $input = [
+            'cl' => 'navigation',
+            'username' => 'john',
+            'password' => 'secret',
+        ];
+
+        $result = $this->redactor->redact($input);
+
+        $this->assertSame('navigation', $result['cl']);
+        $this->assertSame('[redacted]', $result['username']);
+        $this->assertSame('[redacted]', $result['password']);
+    }
+
+    public function testRedactAllValuesMode_DoesNotRedactFncParameter(): void
+    {
+        $this->moduleSettingFacade
+            ->method('isRedactAllValuesEnabled')
+            ->willReturn(true);
+
+        $input = [
+            'fnc' => 'logout',
+            'cl' => 'account',
+            'token' => 'abc123',
+        ];
+
+        $result = $this->redactor->redact($input);
+
+        $this->assertSame('logout', $result['fnc']);
+        $this->assertSame('account', $result['cl']);
+        $this->assertSame('[redacted]', $result['token']);
+    }
+
+    public function testRedactAllValuesMode_WithClAndFncAndOtherParams(): void
+    {
+        $this->moduleSettingFacade
+            ->method('isRedactAllValuesEnabled')
+            ->willReturn(true);
+
+        $input = [
+            'cl' => 'navigation',
+            'fnc' => 'render',
+            'sid' => 'session123',
+            'stoken' => 'token456',
+            'user_id' => '789',
+        ];
+
+        $result = $this->redactor->redact($input);
+
+        // cl and fnc should not be redacted
+        $this->assertSame('navigation', $result['cl']);
+        $this->assertSame('render', $result['fnc']);
+
+        // Other params should be redacted
+        $this->assertSame('[redacted]', $result['sid']);
+        $this->assertSame('[redacted]', $result['stoken']);
+        $this->assertSame('[redacted]', $result['user_id']);
+    }
+
     // Tests for "blocklist only" mode (disabled)
 
     public function testBlocklistMode_WithEmptyBlocklistReturnsUnchangedValues(): void

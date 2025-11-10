@@ -25,11 +25,20 @@ class SensitiveDataRedactor implements SensitiveDataRedactorInterface
 
     private function redactAllValues(array $values): array
     {
+        // Parameters that should not be redacted (controller and function names)
+        $excludeFromRedaction = ['cl', 'fnc'];
+
         $out = [];
 
         foreach ($values as $k => $v) {
             $key = (string) $k;
-            $out[$key] = '[redacted]';
+
+            // Don't redact cl and fnc parameters
+            if (in_array($key, $excludeFromRedaction, true)) {
+                $out[$key] = $v;
+            } else {
+                $out[$key] = '[redacted]';
+            }
         }
 
         return $out;
