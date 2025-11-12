@@ -97,7 +97,7 @@ class ShopControl extends CoreShopControl
             'method'     => $_SERVER['REQUEST_METHOD'] ?? null,
             'get'        => $get,
             'post'       => $post,
-            'userAgent'  => $userAgent,
+            'userAgent'  => $redactAll ? '[redacted]' : $userAgent,
             'lang'       => $facade->getLanguageAbbreviation(),
 
             'sessionId'  => $redactAll ? '[redacted]' : $facade->getSessionId(),
