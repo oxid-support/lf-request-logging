@@ -14,7 +14,6 @@ Logs are **minimally invasive**, stored locally on server, and produce **structu
 
 ### Live
 ```bash
-composer config repositories.oxid-support/request-logger vcs https://github.com/oxid-support/lf-request-logging.git
 composer require oxid-support/request-logger
 ```
 
