@@ -8,7 +8,12 @@ use OxidEsales\EshopCommunity\Internal\Framework\Module\Configuration\Bridge\Mod
 
 class Oxid6ModuleSettingsAdapter implements ModuleSettingsPort
 {
-    public function __construct(private ModuleSettingBridgeInterface $bridge) {}
+    private ModuleSettingBridgeInterface $bridge;
+
+    public function __construct(ModuleSettingBridgeInterface $bridge)
+    {
+        $this->bridge = $bridge;
+    }
 
     public function getInteger(string $name, string $moduleId): int
     {

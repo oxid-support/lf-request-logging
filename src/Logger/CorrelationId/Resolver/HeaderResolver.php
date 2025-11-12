@@ -6,9 +6,12 @@ namespace OxidSupport\RequestLogger\Logger\CorrelationId\Resolver;
 
 class HeaderResolver implements ResolverInterface
 {
-    public function __construct(
-        private string $headerName,
-    ) {}
+    private string $headerName;
+
+    public function __construct(string $headerName)
+    {
+        $this->headerName = $headerName;
+    }
 
     /**
      * Testing: curl -i http://localhost.local/ -H "X-Correlation-Id: abc1234"

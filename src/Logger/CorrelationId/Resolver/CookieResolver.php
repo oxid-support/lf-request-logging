@@ -6,9 +6,12 @@ namespace OxidSupport\RequestLogger\Logger\CorrelationId\Resolver;
 
 class CookieResolver implements ResolverInterface
 {
-    public function __construct(
-        private string $cookieName,
-    ) {}
+    private string $cookieName;
+
+    public function __construct(string $cookieName)
+    {
+        $this->cookieName = $cookieName;
+    }
 
     public function resolve(): ?string
     {

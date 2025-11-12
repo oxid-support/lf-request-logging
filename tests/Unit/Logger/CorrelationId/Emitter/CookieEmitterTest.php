@@ -75,7 +75,7 @@ $GLOBALS['test_cookies'] = [];
  * @param array|int $options Cookie options (expires, path, secure, httponly, samesite)
  * @return bool Always true in tests
  */
-function setcookie(string $name, string $value = "", array|int $options = 0): bool
+function setcookie(string $name, string $value = "", $options = 0): bool
 {
     $GLOBALS['test_cookies'][] = [
         'name' => $name,

@@ -8,9 +8,12 @@ use Psr\Log\LoggerInterface;
 
 final class ShopRequestRecorder implements ShopRequestRecorderInterface
 {
-    public function __construct(
-        private LoggerInterface $logger,
-    ) {}
+    private LoggerInterface $logger;
+
+    public function __construct(LoggerInterface $logger)
+    {
+        $this->logger = $logger;
+    }
 
     public function logStart(array $record): void
     {

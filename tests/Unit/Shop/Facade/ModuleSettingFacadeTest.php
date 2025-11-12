@@ -151,7 +151,7 @@ class ModuleSettingFacadeTest extends TestCase
             ->method('getString')
             ->with(
                 $this->callback(function($arg) {
-                    return str_starts_with($arg, 'oxsrequestlogger_');
+                    return strpos($arg, 'oxsrequestlogger_') === 0;
                 }),
                 'oxsrequestlogger'
             )
@@ -167,7 +167,7 @@ class ModuleSettingFacadeTest extends TestCase
             ->method('getCollection')
             ->with(
                 $this->callback(function($arg) {
-                    return str_starts_with($arg, 'oxsrequestlogger_');
+                    return strpos($arg, 'oxsrequestlogger_') === 0;
                 }),
                 'oxsrequestlogger'
             )

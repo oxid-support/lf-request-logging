@@ -8,10 +8,13 @@ use OxidSupport\RequestLogger\Logger\CorrelationId\Emitter\EmitterInterface;
 
 class CompositeEmitter implements EmitterInterface
 {
-    /** EmitterInterface[] $emitters */
-    public function __construct(
-        private iterable $emitters,
-    ) {}
+    /** @var EmitterInterface[] */
+    private iterable $emitters;
+
+    public function __construct(iterable $emitters)
+    {
+        $this->emitters = $emitters;
+    }
 
     public function emit(string $id): void
     {

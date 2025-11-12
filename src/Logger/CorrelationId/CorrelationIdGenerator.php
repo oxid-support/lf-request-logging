@@ -13,7 +13,7 @@ class CorrelationIdGenerator implements CorrelationIdGeneratorInterface
         try {
             // 16 random bytes -> 32 lowercase hex chars (bin2hex is already lowercase)
             return bin2hex(random_bytes(16));
-        } catch (Throwable) {
+        } catch (Throwable $e) {
             // Fallback: build 16 bytes with random_int
             $bytes = '';
             for ($i = 0; $i < 16; $i++) {

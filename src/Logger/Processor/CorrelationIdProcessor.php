@@ -8,9 +8,12 @@ use OxidSupport\RequestLogger\Logger\CorrelationId\CorrelationIdProviderInterfac
 
 final class CorrelationIdProcessor implements CorrelationIdProcessorInterface
 {
-    public function __construct(
-        private CorrelationIdProviderInterface $correlationIdProvider,
-    ) {}
+    private CorrelationIdProviderInterface $correlationIdProvider;
+
+    public function __construct(CorrelationIdProviderInterface $correlationIdProvider)
+    {
+        $this->correlationIdProvider = $correlationIdProvider;
+    }
 
     public function __invoke(array $record): array
     {

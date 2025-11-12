@@ -8,9 +8,12 @@ use OxidSupport\RequestLogger\Shop\Facade\ModuleSettingFacadeInterface;
 
 class SensitiveDataRedactor implements SensitiveDataRedactorInterface
 {
-    public function __construct(
-        private ModuleSettingFacadeInterface $moduleSettingFacade
-    ) {}
+    private ModuleSettingFacadeInterface $moduleSettingFacade;
+
+    public function __construct(ModuleSettingFacadeInterface $moduleSettingFacade)
+    {
+        $this->moduleSettingFacade = $moduleSettingFacade;
+    }
 
     public function redact(array $values): array
     {

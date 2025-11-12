@@ -9,11 +9,19 @@ use OxidSupport\RequestLogger\Logger\CorrelationId\Resolver\ResolverInterface;
 
 final class CorrelationIdProvider implements CorrelationIdProviderInterface
 {
+    private EmitterInterface $emitter;
+    private CorrelationIdGeneratorInterface $generator;
+    private ResolverInterface $resolver;
+
     public function __construct(
-        private EmitterInterface $emitter,
-        private CorrelationIdGeneratorInterface $generator,
-        private ResolverInterface $resolver,
-    ) {}
+        EmitterInterface $emitter,
+        CorrelationIdGeneratorInterface $generator,
+        ResolverInterface $resolver
+    ) {
+        $this->emitter = $emitter;
+        $this->generator = $generator;
+        $this->resolver = $resolver;
+    }
 
     public function provide(): string
     {

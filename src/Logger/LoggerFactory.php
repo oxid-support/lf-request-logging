@@ -16,12 +16,22 @@ use OxidSupport\RequestLogger\Shop\Facade\ShopFacadeInterface;
 
 class LoggerFactory
 {
+    private CorrelationIdProcessorInterface $correlationIdProcessor;
+    private CorrelationIdProviderInterface $correlationIdProvider;
+    private ShopFacadeInterface $facade;
+    private ModuleSettingFacadeInterface $moduleSettingFacade;
+
     public function __construct(
-        private CorrelationIdProcessorInterface $correlationIdProcessor,
-        private CorrelationIdProviderInterface $correlationIdProvider,
-        private ShopFacadeInterface $facade,
-        private ModuleSettingFacadeInterface $moduleSettingFacade
-    ) {}
+        CorrelationIdProcessorInterface $correlationIdProcessor,
+        CorrelationIdProviderInterface $correlationIdProvider,
+        ShopFacadeInterface $facade,
+        ModuleSettingFacadeInterface $moduleSettingFacade
+    ) {
+        $this->correlationIdProcessor = $correlationIdProcessor;
+        $this->correlationIdProvider = $correlationIdProvider;
+        $this->facade = $facade;
+        $this->moduleSettingFacade = $moduleSettingFacade;
+    }
 
     /**
      * @throws Exception
@@ -57,11 +67,14 @@ class LoggerFactory
 
     private function mapLogLevelToMonologLevel(string $level): int
     {
-        return match ($level) {
-            'standard' => Logger::INFO,
-            'detailed' => Logger::DEBUG,
-            default => Logger::INFO,
-        };
+        switch ($level) {
+            case 'standard':
+                return Logger::INFO;
+            case 'detailed':
+                return Logger::DEBUG;
+            default:
+                return Logger::INFO;
+        }
     }
 
     private function logFilePath(string $filename): string

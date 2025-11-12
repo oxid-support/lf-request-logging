@@ -8,7 +8,12 @@ use OxidEsales\EshopCommunity\Internal\Framework\Module\Facade\ModuleSettingServ
 
 class Oxid7ModuleSettingsAdapter implements ModuleSettingsPort
 {
-    public function __construct(private ModuleSettingServiceInterface $svc) {}
+    private ModuleSettingServiceInterface $svc;
+
+    public function __construct(ModuleSettingServiceInterface $svc)
+    {
+        $this->svc = $svc;
+    }
 
     public function getInteger(string $name, string $moduleId, $default = 0): int
     {

@@ -6,9 +6,12 @@ namespace OxidSupport\RequestLogger\Logger\CorrelationId\Emitter;
 
 class HeaderEmitter implements EmitterInterface
 {
-    public function __construct(
-        private string $headerName,
-    ){}
+    private string $headerName;
+
+    public function __construct(string $headerName)
+    {
+        $this->headerName = $headerName;
+    }
 
     public function emit(string $id): void
     {

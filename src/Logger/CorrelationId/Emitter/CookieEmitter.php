@@ -6,10 +6,14 @@ namespace OxidSupport\RequestLogger\Logger\CorrelationId\Emitter;
 
 class CookieEmitter implements EmitterInterface
 {
-    public function __construct(
-        private string $cookieName,
-        private int $ttl,
-    ) {}
+    private string $cookieName;
+    private int $ttl;
+
+    public function __construct(string $cookieName, int $ttl)
+    {
+        $this->cookieName = $cookieName;
+        $this->ttl = $ttl;
+    }
 
     public function emit(string $id): void
     {

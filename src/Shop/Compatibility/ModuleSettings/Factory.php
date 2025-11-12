@@ -9,9 +9,12 @@ use RuntimeException;
 
 class Factory
 {
-    public function __construct(
-        private DiContainerPort $container
-    ) {}
+    private DiContainerPort $container;
+
+    public function __construct(DiContainerPort $container)
+    {
+        $this->container = $container;
+    }
 
     public function create(): ModuleSettingsPort
     {

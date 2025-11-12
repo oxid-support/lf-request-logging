@@ -173,11 +173,17 @@ class ShopRequestRecorderTest extends TestCase
             ->expects($this->exactly(3))
             ->method($this->callback(function ($method) use (&$callCount) {
                 $callCount++;
-                match ($callCount) {
-                    1 => $this->assertEquals('info', $method),
-                    2 => $this->assertEquals('debug', $method),
-                    3 => $this->assertEquals('info', $method),
-                };
+                switch ($callCount) {
+                    case 1:
+                        $this->assertEquals('info', $method);
+                        break;
+                    case 2:
+                        $this->assertEquals('debug', $method);
+                        break;
+                    case 3:
+                        $this->assertEquals('info', $method);
+                        break;
+                }
                 return true;
             }));
 

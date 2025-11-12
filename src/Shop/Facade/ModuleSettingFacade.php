@@ -9,9 +9,12 @@ use OxidSupport\RequestLogger\Shop\Compatibility\ModuleSettings\ModuleSettingsPo
 
 class ModuleSettingFacade implements ModuleSettingFacadeInterface
 {
-    public function __construct(
-        private ModuleSettingsPort $moduleSettingPort,
-    ) {}
+    private ModuleSettingsPort $moduleSettingPort;
+
+    public function __construct(ModuleSettingsPort $moduleSettingPort)
+    {
+        $this->moduleSettingPort = $moduleSettingPort;
+    }
 
     public function getLogLevel(): string
     {

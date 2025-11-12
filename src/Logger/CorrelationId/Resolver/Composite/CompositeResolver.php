@@ -8,10 +8,13 @@ use OxidSupport\RequestLogger\Logger\CorrelationId\Resolver\ResolverInterface;
 
 class CompositeResolver implements ResolverInterface
 {
-    /** ResolverEmitter[] $emitters */
-    public function __construct(
-        private iterable $resolvers,
-    ) {}
+    /** @var ResolverInterface[] */
+    private iterable $resolvers;
+
+    public function __construct(iterable $resolvers)
+    {
+        $this->resolvers = $resolvers;
+    }
 
     public function resolve(): ?string
     {

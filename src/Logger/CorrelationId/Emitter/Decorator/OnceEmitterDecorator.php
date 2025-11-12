@@ -10,10 +10,12 @@ use OxidSupport\RequestLogger\Logger\CorrelationId\Emitter\EmitterInterface;
 class OnceEmitterDecorator implements EmitterInterface
 {
     public bool $emitted = false;
+    private CompositeEmitter $emitter;
 
-    public function __construct(
-        private CompositeEmitter $emitter,
-    ) {}
+    public function __construct(CompositeEmitter $emitter)
+    {
+        $this->emitter = $emitter;
+    }
 
     public function emit(string $id): void
     {

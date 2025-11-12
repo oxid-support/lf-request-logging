@@ -57,7 +57,7 @@ class ShopControl extends CoreShopControl
     }
 
     private function logStart(
-        ShopRequestRecorderInterface $recorder,
+        ShopRequestRecorderInterface $recorder
     ): void {
 
         $container = DiContainerFactory::create();
@@ -117,7 +117,7 @@ class ShopControl extends CoreShopControl
     private function logFinish(
         ShopRequestRecorderInterface $recorder,
         float $calculateDurationStartTimestamp,
-        float $calculateDurationStopTimestamp,
+        float $calculateDurationStopTimestamp
     ): void
     {
         $duration = (int) round(

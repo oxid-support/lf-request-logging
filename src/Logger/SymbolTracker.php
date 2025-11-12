@@ -53,11 +53,11 @@ final class SymbolTracker
             $lower = strtolower($name);
 
             // remove *_parent aliases
-            if (str_ends_with($lower, '_parent')) {
+            if (substr($lower, -7) === '_parent') {
                 return false;
             }
             // pure legacy short forms, remove outdated class names (e.g. "oxuser")
-            if ($name === $lower && !str_contains($name, '\\')) {
+            if ($name === $lower && strpos($name, '\\') === false) {
                 return false;
             }
             return true;
@@ -74,7 +74,7 @@ final class SymbolTracker
                         continue; // alias/eval
                     }
                     $out[] = $name;
-                } catch (Throwable) {
+                } catch (Throwable $e) {
                     // discard as a precaution
                 }
             }
