@@ -1,6 +1,16 @@
 {
     "name": "oxid-support/request-logger",
+    "description": "OXID eShop module for detailed request logging with correlation ID tracking and symbol monitoring",
     "type": "oxideshop-module",
+    "license": [
+        "proprietary"
+    ],
+    "authors": [
+        {
+            "name": "OXID Support",
+            "email": "support@oxid-esales.com"
+        }
+    ],
     "require": {
         "php": "^7.4 || ^8.0 || ^8.1 || ^8.2 || ^8.3"
     },
