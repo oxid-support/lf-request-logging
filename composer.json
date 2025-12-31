@@ -14,6 +14,9 @@
     "require": {
         "php": "^7.4 || ^8.0 || ^8.1 || ^8.2 || ^8.3"
     },
+    "suggest": {
+        "oxid-support/request-logger-remote": "Provides GraphQL API for remote configuration and activation"
+    },
     "autoload": {
         "psr-4": {
             "OxidSupport\\RequestLogger\\": "src/"

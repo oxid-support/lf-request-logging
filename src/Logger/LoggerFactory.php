@@ -80,9 +80,39 @@ class LoggerFactory
     private function logFilePath(string $filename): string
     {
         $dir = $this->logDirectoryPath();
-        $filename = sprintf('%s-%s.log', Module::ID, $filename);
+
+        // Security: Sanitize correlation ID to prevent path traversal attacks
+        // Only allow alphanumeric characters, hyphens, and underscores
+        $sanitizedFilename = $this->sanitizeFilename($filename);
+
+        $filename = sprintf('%s-%s.log', Module::ID, $sanitizedFilename);
 
         return $dir . $filename;
+    }
+
+    /**
+     * Sanitizes a filename to prevent path traversal and other file system attacks.
+     * Only allows alphanumeric characters, hyphens, and underscores.
+     *
+     * @param string $filename The filename to sanitize
+     * @return string The sanitized filename
+     */
+    private function sanitizeFilename(string $filename): string
+    {
+        // Remove any path traversal sequences first
+        $filename = str_replace(['../', '..\\', '/', '\\'], '', $filename);
+
+        // Only allow safe characters: alphanumeric, hyphen, underscore
+        $sanitized = preg_replace('/[^a-zA-Z0-9\-_]/', '', $filename);
+
+        // Ensure the filename is not empty after sanitization
+        if ($sanitized === '' || $sanitized === null) {
+            // Generate a fallback using current timestamp
+            $sanitized = 'fallback-' . time();
+        }
+
+        // Limit filename length to prevent excessive path lengths
+        return substr($sanitized, 0, 64);
     }
 
     private function logDirectoryPath(): string

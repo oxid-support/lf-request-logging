@@ -88,6 +88,23 @@ Before activating the module, clear the shop’s cache first.
 
 ---
 
+## Remote Configuration (Optional)
+
+For remote management via GraphQL, install the companion module **[Request Logger Remote](https://github.com/oxid-support/lf-request-logging-remote)**:
+
+```bash
+composer require oxid-support/request-logger-remote
+```
+
+This adds a GraphQL API to:
+- Query and modify all module settings remotely
+- Activate/deactivate the module via API
+- Authenticate via JWT with dedicated API user
+
+> **Note**: Request Logger Remote requires OXID 7.4+ and PHP 8.2+
+
+---
+
 ## Module Configuration
 
 The module provides configurable settings accessible via OXID Admin → Extensions → Modules → OXS :: Logging Framework :: Request Logger → Settings:
