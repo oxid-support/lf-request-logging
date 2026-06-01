@@ -6,7 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.1] - 2026-06-02
+
 ### Changed
+- `heartbeatApiVersion` detail fields now require JWT authentication.
 - README cleanup
 
 ## [3.0.0] - 2026-05-27

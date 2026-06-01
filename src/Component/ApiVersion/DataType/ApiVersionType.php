@@ -14,56 +14,66 @@ use TheCodingMachine\GraphQLite\Annotations\Type;
 
 /**
  * GraphQL type for API version information.
- * Enables the heartbeat dashboard to check compatibility with this module.
+ *
+ * Two response shapes depending on caller authentication state:
+ *   - unauthenticated: only `isInstalled` is populated, everything else is null
+ *   - authenticated: all fields populated
  */
 #[Type]
 final class ApiVersionType
 {
     /**
-     * @param string[] $supportedOperations
-     * @param ComponentStatusType[] $componentStatus
+     * @param string[]|null $supportedOperations
+     * @param ComponentStatusType[]|null $componentStatus
      */
     public function __construct(
-        private string $apiVersion,
-        private string $apiSchemaHash,
-        private string $moduleVersion,
-        private array $supportedOperations,
-        private array $componentStatus = [],
+        private bool $isInstalled = true,
+        private ?string $apiVersion = null,
+        private ?string $apiSchemaHash = null,
+        private ?string $moduleVersion = null,
+        private ?array $supportedOperations = null,
+        private ?array $componentStatus = null,
     ) {
     }
 
     #[Field]
-    public function getApiVersion(): string
+    public function isInstalled(): bool
+    {
+        return $this->isInstalled;
+    }
+
+    #[Field]
+    public function getApiVersion(): ?string
     {
         return $this->apiVersion;
     }
 
     #[Field]
-    public function getApiSchemaHash(): string
+    public function getApiSchemaHash(): ?string
     {
         return $this->apiSchemaHash;
     }
 
     #[Field]
-    public function getModuleVersion(): string
+    public function getModuleVersion(): ?string
     {
         return $this->moduleVersion;
     }
 
     /**
-     * @return string[]
+     * @return string[]|null
      */
     #[Field]
-    public function getSupportedOperations(): array
+    public function getSupportedOperations(): ?array
     {
         return $this->supportedOperations;
     }
 
     /**
-     * @return ComponentStatusType[]
+     * @return ComponentStatusType[]|null
      */
     #[Field]
-    public function getComponentStatus(): array
+    public function getComponentStatus(): ?array
     {
         return $this->componentStatus;
     }
