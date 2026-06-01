@@ -16,6 +16,7 @@ use OxidSupport\Heartbeat\Module\Module;
 use PHPUnit\Framework\TestCase;
 use TheCodingMachine\GraphQLite\Annotations\Mutation;
 use TheCodingMachine\GraphQLite\Annotations\Query;
+use TheCodingMachine\GraphQLite\Security\AuthenticationServiceInterface;
 
 final class ApiVersionServiceTest extends TestCase
 {
@@ -24,10 +25,13 @@ final class ApiVersionServiceTest extends TestCase
         'token',
     ];
 
-    private function createService(?ModuleSettingServiceInterface $settingService = null): ApiVersionService
-    {
+    private function createService(
+        ?ModuleSettingServiceInterface $settingService = null,
+        bool $isLogged = true,
+    ): ApiVersionService {
         return new ApiVersionService(
             $settingService ?? $this->createMockSettingService(),
+            $this->createMockAuthenticationService($isLogged),
         );
     }
 
@@ -46,19 +50,42 @@ final class ApiVersionServiceTest extends TestCase
         return $mock;
     }
 
-    public function testGetApiVersionReturnsExpectedFields(): void
+    private function createMockAuthenticationService(bool $isLogged): AuthenticationServiceInterface
     {
-        $service = $this->createService();
+        $mock = $this->createMock(AuthenticationServiceInterface::class);
+        $mock->method('isLogged')->willReturn($isLogged);
+
+        return $mock;
+    }
+
+    public function testUnauthenticatedReturnsDiscoveryOnly(): void
+    {
+        $service = $this->createService(isLogged: false);
         $result = $service->getApiVersion();
 
+        $this->assertTrue($result->isInstalled());
+        $this->assertNull($result->getApiVersion());
+        $this->assertNull($result->getApiSchemaHash());
+        $this->assertNull($result->getModuleVersion());
+        $this->assertNull($result->getSupportedOperations());
+        $this->assertNull($result->getComponentStatus());
+    }
+
+    public function testAuthenticatedReturnsAllFields(): void
+    {
+        $service = $this->createService(isLogged: true);
+        $result = $service->getApiVersion();
+
+        $this->assertTrue($result->isInstalled());
         $this->assertSame(Module::API_VERSION, $result->getApiVersion());
         $this->assertSame(Module::VERSION, $result->getModuleVersion());
         $this->assertSame(Module::SUPPORTED_OPERATIONS, $result->getSupportedOperations());
         $this->assertNotEmpty($result->getApiSchemaHash());
-        $this->assertSame(16, strlen($result->getApiSchemaHash()));
+        $this->assertSame(16, strlen($result->getApiSchemaHash() ?? ''));
+        $this->assertNotNull($result->getComponentStatus());
     }
 
-    public function testGetApiVersionReturnsComponentStatus(): void
+    public function testAuthenticatedReturnsComponentStatus(): void
     {
         $service = $this->createService(
             $this->createMockSettingService(
@@ -66,10 +93,12 @@ final class ApiVersionServiceTest extends TestCase
                 logSender: false,
                 diagnosticsProvider: true,
             ),
+            isLogged: true,
         );
         $result = $service->getApiVersion();
 
         $statuses = $result->getComponentStatus();
+        $this->assertNotNull($statuses);
         $this->assertCount(3, $statuses);
 
         $statusMap = [];
@@ -88,10 +117,11 @@ final class ApiVersionServiceTest extends TestCase
         $mock = $this->createMock(ModuleSettingServiceInterface::class);
         $mock->method('getBoolean')->willThrowException(new \RuntimeException('Setting not found'));
 
-        $service = $this->createService($mock);
+        $service = $this->createService($mock, isLogged: true);
         $result = $service->getApiVersion();
 
-        foreach ($result->getComponentStatus() as $status) {
+        $statuses = $result->getComponentStatus() ?? [];
+        foreach ($statuses as $status) {
             $this->assertFalse(
                 $status->isActive(),
                 "Component '{$status->getName()}' should default to false on error",
