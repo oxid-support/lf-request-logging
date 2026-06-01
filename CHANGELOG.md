@@ -7,13 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-- `README.md`: rewrote "When upgrading OXID itself" subsection to use atomic `composer require` of OXID metapackage + Heartbeat with `--with-all-dependencies` instead of single-package require. The 6.5-specific module-update flow (`db_migrate` + `deactivate`/`activate` to refresh `metadata.php`) is unchanged because it was already correct.
-- `README.md`: rewrote Components section. All four components framed as customer-controlled opt-ins. API User now documented as the opt-in that grants Support extended access and can toggle other components for support cases. Replaced "exposes" with "provides".
-
-### Removed
-- `README.md`: "Module Information" metadata block (duplicated `metadata.php` and `composer.json`).
-- `README.md`: misleading "Local Storage Only" blockquote (the module transmits data to Support via GraphQL when enabled).
-- `README.md`: dead `## Development` section linking to non-existent `COMPONENT_DEVELOPMENT_GUIDE.md`.
+- README cleanup
 
 ## [1.0.1] - 2026-05-27
 
