@@ -3,6 +3,11 @@ services:
     public: false
     autowire: true
 
+  # graphql-base does not alias the GraphQLite interface to its concrete
+  # Authentication service, so autowire cannot resolve it. Alias it locally.
+  TheCodingMachine\GraphQLite\Security\AuthenticationServiceInterface:
+    alias: OxidEsales\GraphQL\Base\Service\Authentication
+
   # Service Layer
   OxidSupport\Heartbeat\Component\ApiVersion\Service\ApiVersionServiceInterface:
     class: OxidSupport\Heartbeat\Component\ApiVersion\Service\ApiVersionService

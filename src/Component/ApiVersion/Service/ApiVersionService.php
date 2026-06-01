@@ -13,19 +13,29 @@ use OxidEsales\EshopCommunity\Internal\Framework\Module\Configuration\Bridge\Mod
 use OxidSupport\Heartbeat\Component\ApiVersion\DataType\ApiVersionType;
 use OxidSupport\Heartbeat\Component\ApiVersion\DataType\ComponentStatusType;
 use OxidSupport\Heartbeat\Module\Module;
+use TheCodingMachine\GraphQLite\Security\AuthenticationServiceInterface;
 
 final class ApiVersionService implements ApiVersionServiceInterface
 {
     private ModuleSettingBridgeInterface $moduleSettingService;
+    private AuthenticationServiceInterface $authenticationService;
 
-    public function __construct(ModuleSettingBridgeInterface $moduleSettingService)
-    {
+    public function __construct(
+        ModuleSettingBridgeInterface $moduleSettingService,
+        AuthenticationServiceInterface $authenticationService
+    ) {
         $this->moduleSettingService = $moduleSettingService;
+        $this->authenticationService = $authenticationService;
     }
 
     public function getApiVersion(): ApiVersionType
     {
+        if (!$this->authenticationService->isLogged()) {
+            return new ApiVersionType(true);
+        }
+
         return new ApiVersionType(
+            true,
             Module::API_VERSION,
             self::computeSchemaHash(Module::SUPPORTED_OPERATIONS),
             Module::VERSION,

@@ -13,7 +13,7 @@ $aModule = [
 It includes detailed request logging, capturing what users do inside the shop.
 Records key request data such as visited pages, parameters, and context, making user flows and issues traceable.
 Includes GraphQL API for remote configuration and activation.',
-    'version' => '1.0.1',
+    'version' => '1.0.2',
     'author' => 'OXID Support',
     'email' => 'support@oxid-esales.com',
     'url' => 'https://oxid-esales.com',

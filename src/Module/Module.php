@@ -14,7 +14,7 @@ final class Module
     public const ID = 'oxsheartbeat';
 
     // Module version (must match metadata.php 'version')
-    public const VERSION = '1.0.1';
+    public const VERSION = '1.0.2';
 
     // API version contract
     public const API_VERSION = '1.0.0';

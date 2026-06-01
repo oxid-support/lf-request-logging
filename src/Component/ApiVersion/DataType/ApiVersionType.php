@@ -14,33 +14,39 @@ use TheCodingMachine\GraphQLite\Annotations\Type;
 
 /**
  * GraphQL type for API version information.
- * Enables the heartbeat dashboard to check compatibility with this module.
+ *
+ * Two response shapes depending on caller authentication state:
+ *   - unauthenticated: only `isInstalled` is populated, everything else is null
+ *   - authenticated: all fields populated
  *
  * @Type
  */
 final class ApiVersionType
 {
-    private string $apiVersion;
-    private string $apiSchemaHash;
-    private string $moduleVersion;
+    private bool $isInstalled;
+    private ?string $apiVersion;
+    private ?string $apiSchemaHash;
+    private ?string $moduleVersion;
 
-    /** @var string[] */
-    private array $supportedOperations;
+    /** @var string[]|null */
+    private ?array $supportedOperations;
 
-    /** @var ComponentStatusType[] */
-    private array $componentStatus;
+    /** @var ComponentStatusType[]|null */
+    private ?array $componentStatus;
 
     /**
-     * @param string[] $supportedOperations
-     * @param ComponentStatusType[] $componentStatus
+     * @param string[]|null $supportedOperations
+     * @param ComponentStatusType[]|null $componentStatus
      */
     public function __construct(
-        string $apiVersion,
-        string $apiSchemaHash,
-        string $moduleVersion,
-        array $supportedOperations,
-        array $componentStatus = []
+        bool $isInstalled = true,
+        ?string $apiVersion = null,
+        ?string $apiSchemaHash = null,
+        ?string $moduleVersion = null,
+        ?array $supportedOperations = null,
+        ?array $componentStatus = null
     ) {
+        $this->isInstalled = $isInstalled;
         $this->apiVersion = $apiVersion;
         $this->apiSchemaHash = $apiSchemaHash;
         $this->moduleVersion = $moduleVersion;
@@ -51,7 +57,15 @@ final class ApiVersionType
     /**
      * @Field
      */
-    public function getApiVersion(): string
+    public function isInstalled(): bool
+    {
+        return $this->isInstalled;
+    }
+
+    /**
+     * @Field
+     */
+    public function getApiVersion(): ?string
     {
         return $this->apiVersion;
     }
@@ -59,7 +73,7 @@ final class ApiVersionType
     /**
      * @Field
      */
-    public function getApiSchemaHash(): string
+    public function getApiSchemaHash(): ?string
     {
         return $this->apiSchemaHash;
     }
@@ -67,27 +81,27 @@ final class ApiVersionType
     /**
      * @Field
      */
-    public function getModuleVersion(): string
+    public function getModuleVersion(): ?string
     {
         return $this->moduleVersion;
     }
 
     /**
-     * @return string[]
+     * @return string[]|null
      *
      * @Field
      */
-    public function getSupportedOperations(): array
+    public function getSupportedOperations(): ?array
     {
         return $this->supportedOperations;
     }
 
     /**
-     * @return ComponentStatusType[]
+     * @return ComponentStatusType[]|null
      *
      * @Field
      */
-    public function getComponentStatus(): array
+    public function getComponentStatus(): ?array
     {
         return $this->componentStatus;
     }
