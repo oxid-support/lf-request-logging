@@ -58,17 +58,6 @@ composer require oxid-support/heartbeat:@dev
 
 For more details on OXID GraphQL installation, see the [official documentation](https://docs.oxid-esales.com/interfaces/graphql/en/latest/install.html).
 
-## Module Information
-
-- **Module ID**: `oxsheartbeat`
-- **Module Title**: OXS :: Heartbeat
-- **Version**: 3.0.0
-- **Author**: support@oxid-esales.com
-- **Supported OXID Versions**: 7.0.x (for OXID 7.1 to 7.5 use branch `b-7.1.x` / version 2.x; for OXID 6.5 use branch `b-6.5.x` / version 1.x)
-- **PHP Version**: 8.0 - 8.4
-
-> **Local Storage Only**: This module writes logs exclusively to server's local filesystem (`OX_BASE_PATH/log/oxs-heartbeat/`). No data is transmitted to external services or third parties.
-
 ---
 
 ## Compatibility
@@ -103,38 +92,37 @@ composer update --no-dev
 ./vendor/bin/oe-console oe:cache:clear
 ```
 
-The module remains activated; no re-activation needed. Cache clear is required in production to pick up new DI container configuration.
-
-When upgrading OXID itself to another minor or major version:
+When upgrading OXID itself, bump OXID and Heartbeat together in a single resolve:
 
 ```bash
-composer require oxid-support/heartbeat
+composer require \
+  oxid-esales/oxideshop-metapackage-ee:vX.Y.Z \
+  oxid-support/heartbeat \
+  --with-all-dependencies
 ```
 
-This re-resolves the constraint and picks the module version that matches the new OXID. Two possible outcomes:
+Two outcomes:
 
-* **A compatible module version is published** (e.g. you upgrade from 7.2 to 7.3 and Heartbeat supports both): Composer installs the matching version automatically.
-* **No module version supports the new OXID yet** (e.g. you upgrade to a brand-new OXID major before Heartbeat has been adapted): Composer fails with a clear error message rather than silently installing an incompatible version. In that case wait for the next Heartbeat release or temporarily remove the module before the OXID upgrade.
+* **Compatible Heartbeat version exists**: Composer installs it automatically.
+* **No matching Heartbeat yet**: Composer fails before any change is written. Wait for the next release or temporarily remove the module before the OXID upgrade.
 
 ---
 
 ## Components
 
-The Heartbeat module consists of several components:
+All four components are optional and can be enabled or disabled independently by the customer in the Admin interface under **OXS :: Heartbeat**.
 
 ### 1. API User
-Manages the API user for remote access to Heartbeat components. **Required** for all remote-enabled components (Request Logger, Log Sender, Diagnostics Provider). Set this up first.
+Additional option to grant OXID Support extended access to the module's GraphQL endpoints, so logs and diagnostics can be evaluated externally. Through this access, Support can also enable or disable other components of this module on demand to improve the data basis for support cases. Enable only if you want Support to read Request Logger configuration, retrieve logs or query diagnostics remotely.
 
 ### 2. Request Logger
-Records controller actions, request parameters and the classes loaded during the lifecycle of a request to local log files. Includes GraphQL API for remote configuration.
+Records controller actions, request parameters and the classes loaded during the lifecycle of a request to local log files. Provides a GraphQL API for remote configuration when API User is enabled.
 
 ### 3. Log Sender
-Collects log files from various sources and provides them to external monitoring systems via GraphQL API.
+Collects log files from various sources and provides them via GraphQL API for remote retrieval when API User is enabled.
 
 ### 4. Diagnostics Provider
-Provides shop diagnostic information (modules, PHP config, server info) via GraphQL API.
-
-All components can be enabled/disabled independently via the Admin interface under **OXS :: Heartbeat**.
+Provides shop diagnostic information (modules, PHP config, server info) via GraphQL API when API User is enabled.
 
 ---
 
@@ -377,12 +365,6 @@ composer install
 ### Test Coverage
 
 The test suite includes unit tests for all components. Some integration tests (e.g., `ModuleEvents`) are skipped in standalone mode as they require a full shop context.
-
----
-
-## Development
-
-See [COMPONENT_DEVELOPMENT_GUIDE.md](COMPONENT_DEVELOPMENT_GUIDE.md) for guidelines on developing new components for this module.
 
 ---
 

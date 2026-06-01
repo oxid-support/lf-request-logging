@@ -4,6 +4,18 @@ All notable changes to the Heartbeat module on the OXID 7.0 line are documented 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- `README.md`: rewrote "When upgrading OXID itself" subsection to use atomic `composer require` of OXID metapackage + Heartbeat with `--with-all-dependencies` instead of single-package require.
+- `README.md`: dropped the inaccurate "no re-activation needed" line from the module-update flow.
+- `README.md`: rewrote Components section. All four components framed as customer-controlled opt-ins. API User now documented as the opt-in that grants Support extended access and can toggle other components for support cases. Replaced "exposes" with "provides".
+
+### Removed
+- `README.md`: "Module Information" metadata block (duplicated `metadata.php` and `composer.json`).
+- `README.md`: misleading "Local Storage Only" blockquote (the module transmits data to Support via GraphQL when enabled).
+- `README.md`: dead `## Development` section linking to non-existent `COMPONENT_DEVELOPMENT_GUIDE.md`.
+
 ## [3.0.0] - 2026-05-27
 
 Initial release of the 3.x line, dedicated to OXID eShop 7.0. Forked from tag `2.0.2`
