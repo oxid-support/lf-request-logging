@@ -10,14 +10,37 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  phpcompatibility:
+    name: PHP Compatibility Check
+    runs-on: ubuntu-latest
 
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+
+    - name: Install PHPCompatibility (global)
+      run: |
+        composer global config --no-plugins allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
+        composer global require --no-progress \
+          squizlabs/php_codesniffer:^4 \
+          phpcompatibility/php-compatibility:dev-develop \
+          dealerdirect/phpcodesniffer-composer-installer
+
+    - name: Run PHPCompatibility
+      run: ~/.composer/vendor/bin/phpcs --standard=PHPCompatibility --runtime-set testVersion 8.0-8.1 -p src/
+
+  build:
+    needs: phpcompatibility
     runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
       matrix:
-        php-version: ['8.2', '8.3', '8.4']
+        php-version: ['8.0', '8.1']
 
     steps:
     - uses: actions/checkout@v6
@@ -26,6 +49,9 @@ jobs:
       uses: shivammathur/setup-php@v2
       with:
         php-version: ${{ matrix.php-version }}
+
+    - name: PHP Lint
+      run: find src/ -name '*.php' -print0 | xargs -0 -n1 php -l
 
     - name: Validate composer.json and composer.lock
       run: composer validate --strict
@@ -39,19 +65,27 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-php-${{ matrix.php-version }}-
 
-    - name: Install dependencies
+    # OXID-CE 7.0.5 transitively requires symfony/yaml ^6 which needs PHP 8.1+,
+    # so a Composer install on PHP 8.0 cannot resolve OXID itself. We still
+    # honour the OXID 7.0 docs that list PHP 8.0 as supported: php -l proves
+    # the module source itself parses on 8.0. Customer-side, an OXID 7.0
+    # install on PHP 8.0 hits the same OXID-internal symfony/yaml block, so
+    # this CI gap mirrors customer reality.
+    - name: Install dependencies (skip on PHP 8.0)
+      if: matrix.php-version != '8.0'
       run: composer install --prefer-dist --no-progress
 
-    # Add a test script to composer.json, for instance: "test": "vendor/bin/phpunit"
-    # Docs: https://getcomposer.org/doc/articles/scripts.md
-
-    - name: Run static tests suite
+    - name: Run static tests suite (skip on PHP 8.0)
+      if: matrix.php-version != '8.0'
       run: composer run-script static
-    - name: Run Unit Tests
+
+    - name: Run Unit Tests (skip on PHP 8.0)
+      if: matrix.php-version != '8.0'
       run: composer run-script tests-unit
 
   psalm-taint-analysis:
     name: Psalm Taint Analysis
+    needs: phpcompatibility
     runs-on: ubuntu-latest
     continue-on-error: true
 
