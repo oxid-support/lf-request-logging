@@ -10,14 +10,37 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  phpcompatibility:
+    name: PHP Compatibility Check
+    runs-on: ubuntu-latest
 
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.1'
+
+    - name: Install PHPCompatibility (global)
+      run: |
+        composer global config --no-plugins allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
+        composer global require --no-progress \
+          squizlabs/php_codesniffer:^4 \
+          phpcompatibility/php-compatibility:dev-develop \
+          dealerdirect/phpcodesniffer-composer-installer
+
+    - name: Run PHPCompatibility
+      run: ~/.composer/vendor/bin/phpcs --standard=PHPCompatibility --runtime-set testVersion 7.4-8.1 -p src/
+
+  build:
+    needs: phpcompatibility
     runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
       matrix:
-        php-version: ['8.1']
+        php-version: ['7.4', '8.0', '8.1']
 
     steps:
     - uses: actions/checkout@v6
@@ -26,6 +49,9 @@ jobs:
       uses: shivammathur/setup-php@v2
       with:
         php-version: ${{ matrix.php-version }}
+
+    - name: PHP Lint
+      run: find src/ -name '*.php' -print0 | xargs -0 -n1 php -l
 
     - name: Validate composer.json and composer.lock
       run: composer validate --strict
@@ -39,13 +65,34 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-php-${{ matrix.php-version }}-
 
-    - name: Install dependencies
+    # PHP 7.4 and 8.0 cannot install dev deps (phpunit 10+ requires PHP 8.1+).
+    # Only verify Composer resolve + PHP lint on those matrix entries.
+    - name: Install dependencies (no-dev, PHP 7.4 / 8.0)
+      if: matrix.php-version == '7.4' || matrix.php-version == '8.0'
+      run: composer install --prefer-dist --no-progress --no-dev
+
+    - name: Install dependencies (full, PHP 8.1+)
+      if: matrix.php-version == '8.1'
       run: composer install --prefer-dist --no-progress
 
-    # Add a test script to composer.json, for instance: "test": "vendor/bin/phpunit"
-    # Docs: https://getcomposer.org/doc/articles/scripts.md
-
     - name: Run static tests suite
+      if: matrix.php-version == '8.1'
       run: composer run-script static
+
     - name: Run Unit Tests
+      if: matrix.php-version == '8.1'
       run: composer run-script tests-unit
+
+  notify-devops:
+    name: Notify DevOps Repo
+    needs: [build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/b-6.5.x'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger submodule update in devops repo
+        uses: peter-evans/repository-dispatch@28959ce8df70de7be546dd1250a005dd32156697 # v4.0.1
+        with:
+          token: ${{ secrets.GH_PAT }}
+          repository: oxid-support/heartbeat_project_devops
+          event-type: submodule-updated
+          client-payload: '{"component": "module", "sha": "${{ github.sha }}", "ref": "${{ github.ref_name }}"}'
