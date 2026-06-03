@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `metadata.php` reads the module version from `HeartbeatModule::VERSION` instead of duplicating the literal string. `Module.php` is the single source of truth from this release on.
+
 ## [1.0.2] - 2026-06-02
 
 ### Changed
