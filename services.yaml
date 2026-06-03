@@ -109,6 +109,10 @@ services:
         class: OxidSupport\Heartbeat\Component\ApiUser\Service\TokenGenerator
         public: true
 
+    OxidSupport\Heartbeat\Component\ApiUser\Service\TokenInvalidatorInterface:
+        class: OxidSupport\Heartbeat\Component\ApiUser\Service\TokenInvalidator
+        public: true
+
     # Component: ApiUser - Controller/Admin
     OxidSupport\Heartbeat\Component\ApiUser\Controller\Admin\SetupController:
         public: true
