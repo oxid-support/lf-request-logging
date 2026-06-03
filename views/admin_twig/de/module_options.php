@@ -47,6 +47,12 @@ $aLang = [
     'OXSHEARTBEAT_LF_REMOTE_DESC' => 'Ermöglicht dem OXID Support, den Request Logger aus der Ferne zu konfigurieren.',
 
     // ==========================================================================
+    // Module Config Tab
+    // ==========================================================================
+    'OXSHEARTBEAT_MODULE_CONFIG_HINT' => 'Einstellungen und Einrichtung dieses Moduls finden Sie im linken Menü unter "OXS :: Heartbeat", insbesondere im Eintrag',
+    'OXSHEARTBEAT_MODULE_CONFIG_HINT_LINK' => 'API User',
+
+    // ==========================================================================
     // API User Component
     // ==========================================================================
     'OXSHEARTBEAT_APIUSER_TITLE' => 'API User',
