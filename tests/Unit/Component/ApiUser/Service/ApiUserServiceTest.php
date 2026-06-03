@@ -99,19 +99,20 @@ final class ApiUserServiceTest extends TestCase
         $this->assertEquals('void', $returnType->getName());
     }
 
-    public function testConstructorRequiresQueryBuilderFactory(): void
+    public function testConstructorRequiresQueryBuilderFactoryAndTokenInvalidator(): void
     {
         $reflection = new \ReflectionClass(ApiUserService::class);
         $constructor = $reflection->getConstructor();
 
         $this->assertNotNull($constructor);
-        $this->assertCount(1, $constructor->getParameters());
+        $this->assertCount(2, $constructor->getParameters());
 
-        $param = $constructor->getParameters()[0];
-        $this->assertEquals('queryBuilderFactory', $param->getName());
+        $params = $constructor->getParameters();
+        $this->assertEquals('queryBuilderFactory', $params[0]->getName());
+        $this->assertEquals('tokenInvalidator', $params[1]->getName());
     }
 
-    public function testAllMethodsArePublic(): void
+    public function testAllPublicApiMethodsArePublic(): void
     {
         $reflection = new \ReflectionClass(ApiUserService::class);
         $methods = ['loadApiUser', 'resetPassword', 'setPasswordForApiUser', 'resetPasswordForApiUser'];
@@ -120,5 +121,23 @@ final class ApiUserServiceTest extends TestCase
             $method = $reflection->getMethod($methodName);
             $this->assertTrue($method->isPublic(), "Method $methodName should be public");
         }
+    }
+
+    public function testNoStandaloneInvalidateMethodOnApiUserService(): void
+    {
+        $reflection = new \ReflectionClass(ApiUserService::class);
+
+        // Token invalidation lives on TokenInvalidatorService and is delegated to
+        // from resetPasswordForApiUser(). It must not become a standalone method
+        // on ApiUserService, because that would let callers wipe tokens without
+        // resetting the password too. See OXS-3054.
+        $this->assertFalse(
+            $reflection->hasMethod('invalidateTokensForUser'),
+            'Token invalidation must not live on ApiUserService directly'
+        );
+        $this->assertFalse(
+            $reflection->hasMethod('invalidateApiUserTokens'),
+            'Token invalidation must not live on ApiUserService directly'
+        );
     }
 }

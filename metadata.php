@@ -40,6 +40,7 @@ Includes GraphQL API for remote configuration and activation.',
     ],
     'events' => [
         'onActivate' => \OxidSupport\Heartbeat\Component\RequestLogger\Core\ModuleEvents::class . '::onActivate',
+        'onDeactivate' => \OxidSupport\Heartbeat\Component\RequestLogger\Core\ModuleEvents::class . '::onDeactivate',
     ],
     'settings' => [
         // Request Logger component settings (hidden - managed via component UI)
