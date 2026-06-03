@@ -86,6 +86,12 @@ $aLang = [
     'OXSHEARTBEAT_APIUSER_CONFIRM_DIALOG' => 'Are you absolutely sure? This will immediately revoke all remote access!',
     'OXSHEARTBEAT_APIUSER_RESET_BUTTON' => 'Reset Password & Generate New Token',
 
+    // API User Token Invalidation (OXS-3058)
+    'OXSHEARTBEAT_APIUSER_INVALIDATE_TITLE' => 'Invalidate Tokens',
+    'OXSHEARTBEAT_APIUSER_INVALIDATE_DESCRIPTION' => 'Revokes all active JWTs of the API user immediately. The service password stays unchanged. Use this if you suspect a token leak but do not want to interrupt the setup. OXID Support can log in again right after.',
+    'OXSHEARTBEAT_APIUSER_CONFIRM_INVALIDATE' => 'I want to revoke all active JWTs of the API user now',
+    'OXSHEARTBEAT_APIUSER_INVALIDATE_BUTTON' => 'Invalidate Tokens Now',
+
     // ==========================================================================
     // Request Logger Remote Component (simplified - API User setup moved out)
     // ==========================================================================

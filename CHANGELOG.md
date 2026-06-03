@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.4] - 2026-06-03
+
+### Changed
+- JWTs des `heartbeat-api`-Service-Users werden bei `heartbeatResetPassword` und bei Modul-Deaktivierung sofort invalidiert.
+- Neuer Admin-Button "Sessions sofort beenden" im API-User-Setup-UI.
+- Neue GraphQL-Mutation `heartbeatInvalidateTokens` invalidiert JWTs ohne Passwort-Reset.
+- Direkte Änderung des Service-Users im OXID-Administrationsbereich (Passwort, Aktiv-Flag) invalidiert die JWTs ebenfalls.
+
 ## [2.0.3] - 2026-06-02
 
 ### Changed

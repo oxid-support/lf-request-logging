@@ -14,7 +14,7 @@ final class Module
     public const ID = 'oxsheartbeat';
 
     // Module version — single source of truth. metadata.php reads this via HeartbeatModule::VERSION.
-    public const VERSION = '2.0.3';
+    public const VERSION = '2.0.4';
 
     // API version contract
     public const API_VERSION = '1.0.0';
@@ -24,6 +24,7 @@ final class Module
         'token',
         'heartbeatSetPassword',
         'heartbeatResetPassword',
+        'heartbeatInvalidateTokens',
         'requestLoggerSettings',
         'requestLoggerLogLevel',
         'requestLoggerLogLevelChange',
