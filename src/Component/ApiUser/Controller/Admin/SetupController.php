@@ -13,6 +13,7 @@ use OxidEsales\EshopCommunity\Internal\Container\ContainerFactory;
 use OxidSupport\Heartbeat\Module\Module;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\ApiUserServiceInterface;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\ApiUserStatusServiceInterface;
+use OxidSupport\Heartbeat\Component\ApiUser\Service\TokenInvalidatorInterface;
 use OxidSupport\Heartbeat\Shared\Controller\Admin\AbstractComponentController;
 
 /**
@@ -27,6 +28,7 @@ class SetupController extends AbstractComponentController
 
     private ?ApiUserServiceInterface $apiUserService = null;
     private ?ApiUserStatusServiceInterface $apiUserStatusService = null;
+    private ?TokenInvalidatorInterface $tokenInvalidator = null;
 
     /**
      * API User is "active" when setup is complete.
@@ -143,6 +145,21 @@ class SetupController extends AbstractComponentController
         );
     }
 
+    /**
+     * Invalidate all JWTs of the heartbeat-api service user without resetting
+     * the password. Used when the admin suspects a token leak but wants to keep
+     * the existing service password. See OXS-3058.
+     */
+    public function invalidateTokens(): void
+    {
+        try {
+            $this->getTokenInvalidator()->invalidateForApiUser();
+        } catch (\Exception) {
+            // Swallow: service user might not exist yet. The button is only
+            // exposed after setup is complete, so this is defensive only.
+        }
+    }
+
     protected function getApiUserService(): ApiUserServiceInterface
     {
         if ($this->apiUserService === null) {
@@ -161,5 +178,15 @@ class SetupController extends AbstractComponentController
                 ->get(ApiUserStatusServiceInterface::class);
         }
         return $this->apiUserStatusService; // @phpstan-ignore return.type
+    }
+
+    protected function getTokenInvalidator(): TokenInvalidatorInterface
+    {
+        if ($this->tokenInvalidator === null) {
+            $this->tokenInvalidator = ContainerFactory::getInstance()
+                ->getContainer()
+                ->get(TokenInvalidatorInterface::class);
+        }
+        return $this->tokenInvalidator; // @phpstan-ignore return.type
     }
 }

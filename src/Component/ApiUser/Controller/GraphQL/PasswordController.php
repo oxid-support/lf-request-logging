@@ -16,6 +16,7 @@ use OxidSupport\Heartbeat\Component\ApiUser\Exception\PasswordTooShortException;
 use OxidSupport\Heartbeat\Component\ApiUser\Exception\SetupNotAvailableException;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\ApiUserServiceInterface;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\TokenGeneratorInterface;
+use OxidSupport\Heartbeat\Component\ApiUser\Service\TokenInvalidatorInterface;
 use TheCodingMachine\GraphQLite\Annotations\Logged;
 use TheCodingMachine\GraphQLite\Annotations\Mutation;
 use TheCodingMachine\GraphQLite\Annotations\Right;
@@ -25,7 +26,8 @@ final class PasswordController
     public function __construct(
         private ApiUserServiceInterface $apiUserService,
         private ModuleSettingServiceInterface $moduleSettingService,
-        private TokenGeneratorInterface $tokenGenerator
+        private TokenGeneratorInterface $tokenGenerator,
+        private TokenInvalidatorInterface $tokenInvalidator,
     ) {
     }
 
@@ -48,6 +50,21 @@ final class PasswordController
         $this->apiUserService->setPasswordForApiUser($password);
 
         return true;
+    }
+
+    /**
+     * Invalidate all JWTs of the heartbeat-api service user without resetting
+     * the password. Useful when the service password should remain intact and
+     * the existing JWTs should still be revoked. See OXS-3059.
+     *
+     * @return int number of tokens deleted
+     */
+    #[Mutation]
+    #[Logged]
+    #[Right('OXSHEARTBEAT_TOKEN_INVALIDATE')]
+    public function heartbeatInvalidateTokens(): int
+    {
+        return $this->tokenInvalidator->invalidateForApiUser();
     }
 
     /**

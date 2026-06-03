@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Active sessions of the `heartbeat-api` service user are terminated immediately on `heartbeatResetPassword` and on module deactivation.
+- New admin button "Terminate API Sessions" in the API user setup UI.
+- New GraphQL mutation `heartbeatInvalidateTokens` terminates sessions without resetting the password.
+- Edits to the service user in the OXID admin area (password, login email, active flag) terminate the sessions too.
+
 ## [2.0.3] - 2026-06-02
 
 ### Changed
