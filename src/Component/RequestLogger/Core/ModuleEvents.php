@@ -9,14 +9,12 @@ declare(strict_types=1);
 
 namespace OxidSupport\Heartbeat\Component\RequestLogger\Core;
 
-use OxidEsales\DoctrineMigrationWrapper\MigrationsBuilder;
 use OxidEsales\Eshop\Core\Registry;
 use OxidEsales\EshopCommunity\Internal\Container\ContainerFactory;
 use OxidEsales\EshopCommunity\Internal\Framework\Database\QueryBuilderFactoryInterface;
 use OxidEsales\EshopCommunity\Internal\Framework\Module\Facade\ModuleSettingServiceInterface;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\TokenInvalidatorInterface;
 use OxidSupport\Heartbeat\Module\Module;
-use Symfony\Component\Console\Output\BufferedOutput;
 
 final class ModuleEvents
 {
@@ -30,7 +28,12 @@ final class ModuleEvents
      */
     public static function onActivate(): void
     {
-        self::executeModuleMigrations();
+        // Module activation intentionally does NOT run database migrations.
+        // The shop operator runs them as an explicit step before activation
+        // (`oe-eshop-doctrine_migration migrations:migrate oxsheartbeat`).
+        // Activation should stay fast, idempotent and side-effect-free, plus
+        // CI/deployment pipelines already treat migrations as a separate step.
+        // See OXS-3066.
         self::regenerateViews();
         self::clearCache();
 
@@ -71,16 +74,6 @@ final class ModuleEvents
             // not registered, api user missing) because we must not block the
             // deactivation flow itself. The tokens become useless without the
             // module routes anyway.
-        }
-    }
-
-    private static function executeModuleMigrations(): void
-    {
-        $migrations = (new MigrationsBuilder())->build();
-        $output = new BufferedOutput();
-        $migrations->setOutput($output);
-        if ($migrations->execute('migrations:up-to-date', Module::ID)) {
-            $migrations->execute('migrations:migrate', Module::ID);
         }
     }
 

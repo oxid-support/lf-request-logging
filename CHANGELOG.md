@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New admin button "Terminate API Sessions" in the API user setup UI.
 - New GraphQL mutation `heartbeatInvalidateTokens` terminates sessions without resetting the password.
 - Edits to the service user in the OXID admin area (password, login email, active flag) terminate the sessions too.
+- Module activation no longer runs database migrations. Operators run `oe-eshop-doctrine_migration migrations:migrate oxsheartbeat` as an explicit step before activation (already documented in README).
 
 ## [2.0.3] - 2026-06-02
 
