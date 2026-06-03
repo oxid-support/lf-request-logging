@@ -14,6 +14,7 @@ use OxidEsales\Eshop\Core\Registry;
 use OxidEsales\EshopCommunity\Internal\Container\ContainerFactory;
 use OxidEsales\EshopCommunity\Internal\Framework\Database\QueryBuilderFactoryInterface;
 use OxidEsales\EshopCommunity\Internal\Framework\Module\Facade\ModuleSettingServiceInterface;
+use OxidSupport\Heartbeat\Component\ApiUser\Service\TokenInvalidatorInterface;
 use OxidSupport\Heartbeat\Module\Module;
 use Symfony\Component\Console\Output\BufferedOutput;
 
@@ -52,6 +53,25 @@ final class ModuleEvents
 
         $token = Registry::getUtilsObject()->generateUId();
         $moduleSettingService->saveString(Module::SETTING_APIUSER_SETUP_TOKEN, $token, Module::ID);
+    }
+
+    /**
+     * Called on module deactivation.
+     * Invalidates all JWTs of the heartbeat-api service user so that no stale
+     * token can keep the dormant module accessible from outside. See OXS-3054.
+     */
+    public static function onDeactivate(): void
+    {
+        try {
+            $container = ContainerFactory::getInstance()->getContainer();
+            $tokenInvalidator = $container->get(TokenInvalidatorInterface::class);
+            $tokenInvalidator->invalidateForApiUser();
+        } catch (\Throwable $e) {
+            // Module is being deactivated. Swallow lookup failures (e.g. service
+            // not registered, api user missing) because we must not block the
+            // deactivation flow itself. The tokens become useless without the
+            // module routes anyway.
+        }
     }
 
     private static function executeModuleMigrations(): void

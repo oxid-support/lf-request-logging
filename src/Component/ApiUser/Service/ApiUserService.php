@@ -20,7 +20,8 @@ use OxidSupport\Heartbeat\Component\ApiUser\Exception\UserNotFoundException;
 final class ApiUserService implements ApiUserServiceInterface
 {
     public function __construct(
-        private QueryBuilderFactoryInterface $queryBuilderFactory
+        private QueryBuilderFactoryInterface $queryBuilderFactory,
+        private TokenInvalidatorInterface $tokenInvalidator,
     ) {
     }
 
@@ -82,5 +83,11 @@ final class ApiUserService implements ApiUserServiceInterface
         }
 
         $this->resetPassword($user->getId());
+
+        // Token invalidation is bundled with the password reset on purpose:
+        // a stolen JWT would otherwise remain valid until its exp claim, which
+        // defeats the point of a password reset triggered by suspected leak.
+        // See OXS-3054.
+        $this->tokenInvalidator->invalidateForApiUser();
     }
 }
