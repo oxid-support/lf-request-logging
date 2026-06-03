@@ -86,6 +86,15 @@ $aLang = [
     'OXSHEARTBEAT_APIUSER_CONFIRM_DIALOG' => 'Are you absolutely sure? This will immediately revoke all remote access!',
     'OXSHEARTBEAT_APIUSER_RESET_BUTTON' => 'Reset Password & Generate New Token',
 
+    // API User Token Invalidation (OXS-3058)
+    'OXSHEARTBEAT_APIUSER_INVALIDATE_TITLE' => 'Terminate API Sessions',
+    'OXSHEARTBEAT_APIUSER_INVALIDATE_DESCRIPTION' => 'Terminates all active sessions (JWTs) of the API user immediately. The service password and the setup token stay unchanged. OXID Support can log in again right after.',
+    'OXSHEARTBEAT_APIUSER_INVALIDATE_WARNING_1' => 'All currently active remote sessions of OXID Support will be terminated immediately',
+    'OXSHEARTBEAT_APIUSER_INVALIDATE_WARNING_2' => 'OXID Support must log in again before remote operations can continue',
+    'OXSHEARTBEAT_APIUSER_INVALIDATE_WARNING_3' => 'Any in-flight remote operation (log download, configuration change) will fail and need to be retried',
+    'OXSHEARTBEAT_APIUSER_CONFIRM_INVALIDATE' => 'I want to terminate all active sessions of the API user now',
+    'OXSHEARTBEAT_APIUSER_INVALIDATE_BUTTON' => 'Terminate Sessions Now',
+
     // ==========================================================================
     // Request Logger Remote Component (simplified - API User setup moved out)
     // ==========================================================================

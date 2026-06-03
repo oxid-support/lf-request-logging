@@ -69,7 +69,7 @@ final class PermissionProviderTest extends TestCase
         $provider = new PermissionProvider();
         $permissions = $provider->getPermissions();
 
-        $this->assertCount(1, $permissions['oxsheartbeat_api']);
+        $this->assertCount(2, $permissions['oxsheartbeat_api']);
     }
 
     public function testAdminGroupHasExactlyOnePermission(): void
@@ -77,7 +77,7 @@ final class PermissionProviderTest extends TestCase
         $provider = new PermissionProvider();
         $permissions = $provider->getPermissions();
 
-        $this->assertCount(1, $permissions['oxidadmin']);
+        $this->assertCount(2, $permissions['oxidadmin']);
     }
 
     public function testBothGroupsHaveSamePermissions(): void

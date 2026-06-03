@@ -23,6 +23,11 @@ Includes GraphQL API for remote configuration and activation.',
             \OxidSupport\Heartbeat\Component\RequestLogger\Controller\Admin\ModuleConfigController::class,
         \OxidEsales\Eshop\Application\Controller\Admin\NavigationController::class =>
             \OxidSupport\Heartbeat\Shared\Controller\Admin\NavigationController::class,
+        // Override oxuser to invalidate Heartbeat JWTs when the service user
+        // is edited directly in the OXID admin area (Stamm > Benutzer).
+        // See OXS-3060.
+        \OxidEsales\Eshop\Application\Model\User::class =>
+            \OxidSupport\Heartbeat\Shop\Extend\Application\Model\User::class,
     ],
     'controllers' => [
         'heartbeat_requestlogger_settings' =>

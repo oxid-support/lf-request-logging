@@ -79,6 +79,41 @@
     </div>
 {% endif %}
 
+<details class="api-invalidate-section">
+    <summary><h3>{{ translate({ ident: "OXSHEARTBEAT_APIUSER_INVALIDATE_TITLE" }) }}</h3></summary>
+    <div class="invalidate-content">
+        <p>{{ translate({ ident: "OXSHEARTBEAT_APIUSER_INVALIDATE_DESCRIPTION" }) }}</p>
+        <ul>
+            <li>&#10060; {{ translate({ ident: "OXSHEARTBEAT_APIUSER_INVALIDATE_WARNING_1" }) }}</li>
+            <li>&#10060; {{ translate({ ident: "OXSHEARTBEAT_APIUSER_INVALIDATE_WARNING_2" }) }}</li>
+            <li>&#10060; {{ translate({ ident: "OXSHEARTBEAT_APIUSER_INVALIDATE_WARNING_3" }) }}</li>
+        </ul>
+        <div style="margin: 15px 0 0 0; padding: 15px; background: #fff3e0; border: 1px solid #ff9800; border-radius: 4px;">
+            <form method="post" action="{{ oViewConf.getSelfLink()|raw }}">
+                {{ oViewConf.getHiddenSid()|raw }}
+                <input type="hidden" name="cl" value="heartbeat_apiuser_setup">
+                <input type="hidden" name="fnc" value="invalidateTokens">
+                <label style="cursor: pointer; color: #e65100; display: block; margin-bottom: 15px;">
+                    <input type="checkbox" id="confirmInvalidate" onchange="
+                        var btn = document.getElementById('invalidateBtn');
+                        if (this.checked) {
+                            btn.disabled = false;
+                            btn.style.opacity = '1';
+                            btn.style.cursor = 'pointer';
+                        } else {
+                            btn.disabled = true;
+                            btn.style.opacity = '0.5';
+                            btn.style.cursor = 'not-allowed';
+                        }
+                    ">
+                    {{ translate({ ident: "OXSHEARTBEAT_APIUSER_CONFIRM_INVALIDATE" }) }}
+                </label>
+                <button type="submit" id="invalidateBtn" disabled style="display: block; background: #dc3545; color: white; border: none; padding: 8px 16px; font-size: 13px; cursor: not-allowed; opacity: 0.5; border-radius: 4px;">{{ translate({ ident: "OXSHEARTBEAT_APIUSER_INVALIDATE_BUTTON" }) }}</button>
+            </form>
+        </div>
+    </div>
+</details>
+
 <details class="api-reset-section">
     <summary><h3>{{ translate({ ident: "OXSHEARTBEAT_APIUSER_RESET_TITLE" }) }}</h3></summary>
     <div class="reset-content">
