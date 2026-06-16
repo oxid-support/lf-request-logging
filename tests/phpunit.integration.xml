@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/11.0/phpunit.xsd"
+         bootstrap="bootstrap.integration.php"
+         colors="true"
+         stopOnFailure="false"
+         cacheDirectory=".phpunit.integration.cache">
+    <!--
+      Integration tests run inside an installed OXID shop. bootstrap.integration.php
+      boots the shop (OXID_BOOTSTRAP, default /var/www/source/bootstrap.php) and
+      registers the test autoloader. The module AND oe_graphql_base must be
+      activated before running.
+    -->
+    <testsuites>
+        <testsuite name="Integration Tests">
+            <directory>Integration/</directory>
+        </testsuite>
+    </testsuites>
+
+    <php>
+        <ini name="error_reporting" value="-1"/>
+        <ini name="display_errors" value="1"/>
+    </php>
+</phpunit>
