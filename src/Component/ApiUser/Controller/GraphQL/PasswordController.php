@@ -16,6 +16,7 @@ use OxidSupport\Heartbeat\Component\ApiUser\Exception\PasswordTooShortException;
 use OxidSupport\Heartbeat\Component\ApiUser\Exception\SetupNotAvailableException;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\ApiUserServiceInterface;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\TokenGeneratorInterface;
+use OxidSupport\Heartbeat\Component\ApiUser\Service\TokenInvalidatorInterface;
 use TheCodingMachine\GraphQLite\Annotations\Logged;
 use TheCodingMachine\GraphQLite\Annotations\Mutation;
 use TheCodingMachine\GraphQLite\Annotations\Right;
@@ -25,15 +26,18 @@ final class PasswordController
     private ApiUserServiceInterface $apiUserService;
     private ModuleSettingBridgeInterface $moduleSettingService;
     private TokenGeneratorInterface $tokenGenerator;
+    private TokenInvalidatorInterface $tokenInvalidator;
 
     public function __construct(
         ApiUserServiceInterface $apiUserService,
         ModuleSettingBridgeInterface $moduleSettingService,
-        TokenGeneratorInterface $tokenGenerator
+        TokenGeneratorInterface $tokenGenerator,
+        TokenInvalidatorInterface $tokenInvalidator
     ) {
         $this->apiUserService = $apiUserService;
         $this->moduleSettingService = $moduleSettingService;
         $this->tokenGenerator = $tokenGenerator;
+        $this->tokenInvalidator = $tokenInvalidator;
     }
 
     /**
@@ -79,6 +83,21 @@ final class PasswordController
         $this->moduleSettingService->save(Module::SETTING_APIUSER_SETUP_TOKEN, $token, Module::ID);
 
         return $token;
+    }
+
+    /**
+     * Terminate all active sessions of the Heartbeat API user without resetting
+     * its password. Emergency revocation endpoint. See OXS-3059.
+     *
+     * @Mutation
+     * @Logged
+     * @Right(name="OXSHEARTBEAT_TOKEN_INVALIDATE")
+     *
+     * @return int number of tokens deleted
+     */
+    public function heartbeatInvalidateTokens(): int
+    {
+        return $this->tokenInvalidator->invalidateForApiUser();
     }
 
     /**

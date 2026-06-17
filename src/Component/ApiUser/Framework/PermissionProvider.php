@@ -19,10 +19,12 @@ final class PermissionProvider implements PermissionProviderInterface
             // Custom user group for Heartbeat API access
             'oxsheartbeat_api' => [
                 'OXSHEARTBEAT_PASSWORD_RESET',
+                'OXSHEARTBEAT_TOKEN_INVALIDATE',
             ],
             // Also grant permissions to shop admins
             'oxidadmin' => [
                 'OXSHEARTBEAT_PASSWORD_RESET',
+                'OXSHEARTBEAT_TOKEN_INVALIDATE',
             ],
         ];
     }
