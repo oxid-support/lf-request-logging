@@ -93,6 +93,14 @@ $aLang = [
     'OXSHEARTBEAT_APIUSER_CONFIRM_DIALOG' => 'Sind Sie absolut sicher? Dies widerruft sofort allen Fernzugriff!',
     'OXSHEARTBEAT_APIUSER_RESET_BUTTON' => 'Passwort zurücksetzen & neuen Token generieren',
 
+    'OXSHEARTBEAT_APIUSER_INVALIDATE_TITLE' => 'API Sessions sofort beenden',
+    'OXSHEARTBEAT_APIUSER_INVALIDATE_DESCRIPTION' => 'Beendet alle aktiven Sessions (JWTs) des API-Users sofort. Das Service-Passwort und der Setup-Token bleiben erhalten. OXID Support kann sich danach sofort neu einloggen.',
+    'OXSHEARTBEAT_APIUSER_INVALIDATE_WARNING_1' => 'Alle laufenden Remote-Sessions vom OXID Support werden sofort beendet',
+    'OXSHEARTBEAT_APIUSER_INVALIDATE_WARNING_2' => 'OXID Support muss sich neu einloggen, bevor weiter remote gearbeitet werden kann',
+    'OXSHEARTBEAT_APIUSER_INVALIDATE_WARNING_3' => 'Laufende Aktionen (Log-Download, Konfigurationsänderung) brechen ab und müssen wiederholt werden',
+    'OXSHEARTBEAT_APIUSER_CONFIRM_INVALIDATE' => 'Ich möchte alle aktiven Sessions des API-Users jetzt beenden',
+    'OXSHEARTBEAT_APIUSER_INVALIDATE_BUTTON' => 'Sessions jetzt beenden',
+
     // ==========================================================================
     // Request Logger Remote Component (simplified - API User setup moved out)
     // ==========================================================================
