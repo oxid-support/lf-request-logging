@@ -12,6 +12,7 @@
         }
     ],
     "require": {
+        "php": "^8.2",
         "oxid-esales/oxideshop-ce": "~7.1.0",
         "oxid-esales/graphql-base": "^9.0",
         "oxid-esales/graphql-configuration-access": "^1.1"

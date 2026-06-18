@@ -40,8 +40,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # OXID 7.1.x runs on PHP 8.1-8.3; newer PHP needs a newer OXID line.
-        php-version: ['8.1', '8.2', '8.3']
+        # Maintained OXID 7.1.x (7.1.1+) and its unified-namespace-generator
+        # require PHP 8.2+; PHP 8.1 only resolves the unmaintained 7.1.0 stack.
+        php-version: ['8.2', '8.3']
 
     steps:
     - uses: actions/checkout@v6

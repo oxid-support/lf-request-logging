@@ -13,6 +13,6 @@
     <arg name="colors"/>
 
     <!-- Supported PHP range for this line -->
-    <config name="testVersion" value="8.1-8.3"/>
+    <config name="testVersion" value="8.2-8.3"/>
     <rule ref="PHPCompatibility"/>
 </ruleset>
