@@ -50,6 +50,7 @@
         "phpmd-report": "phpmd src json tests/PhpMd/standard.xml --reportfile tests/Reports/phpmd.report.json",
 
         "phpcompat": "phpcs --standard=tests/phpcompat.xml",
+        "lint": "find src -name '*.php' -print0 | xargs -0 -n1 php -l",
 
         "static": [
             "@phpcs",
@@ -57,7 +58,13 @@
             "@phpmd"
         ],
 
-        "test": "@tests-unit",
+        "test": [
+            "@lint",
+            "@phpcompat",
+            "@static",
+            "@tests-unit",
+            "@tests-integration"
+        ],
         "tests-unit": "phpunit -c tests/phpunit.xml --testsuite='Unit Tests'",
         "tests-integration": "phpunit -c tests/phpunit.integration.xml --testsuite='Integration Tests'",
         "tests-coverage": "XDEBUG_MODE=coverage phpunit -c tests/phpunit.xml --coverage-text --coverage-html=tests/Reports/CoverageHtml"
