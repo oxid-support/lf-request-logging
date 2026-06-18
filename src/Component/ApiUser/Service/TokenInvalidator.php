@@ -51,6 +51,6 @@ final class TokenInvalidator implements TokenInvalidatorInterface
 
         $result = $deleteQb->execute();
 
-        return is_object($result) ? $result->rowCount() : (int) $result;
+        return is_object($result) ? (int) $result->rowCount() : (int) $result;
     }
 }
