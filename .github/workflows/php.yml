@@ -120,7 +120,7 @@ jobs:
       matrix:
         oxid: ['7.1', '7.2', '7.3', '7.4', '7.5']
     steps:
-      - run: echo "Placeholder: dedicated compatibility check for OXID ${{ matrix.oxid }} is planned, not yet implemented."
+      - run: echo "OXID ${{ matrix.oxid }} compatibility check is planned (placeholder, not yet implemented)"
 
   notify-devops:
     name: Notify DevOps Repo
