@@ -9,7 +9,12 @@ declare(strict_types=1);
 
 namespace OxidSupport\Heartbeat\Tests\Unit\Component\ApiUser\Controller\GraphQL;
 
+use OxidEsales\EshopCommunity\Internal\Framework\Module\Configuration\Bridge\ModuleSettingBridgeInterface;
 use OxidSupport\Heartbeat\Component\ApiUser\Controller\GraphQL\PasswordController;
+use OxidSupport\Heartbeat\Component\ApiUser\Exception\SetPasswordFailedException;
+use OxidSupport\Heartbeat\Component\ApiUser\Service\ApiUserServiceInterface;
+use OxidSupport\Heartbeat\Component\ApiUser\Service\TokenGeneratorInterface;
+use OxidSupport\Heartbeat\Component\ApiUser\Service\TokenInvalidatorInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
@@ -123,5 +128,77 @@ final class PasswordControllerTest extends TestCase
 
         $this->assertNotNull($returnType);
         $this->assertEquals('string', $returnType->getName());
+    }
+
+    /**
+     * OXS-3068: when setPasswordForApiUser fails after the token was cleared, the
+     * token must be restored so the setup stays retryable, and a typed exception
+     * must surface instead of leaving the service user locked out.
+     */
+    public function testSetPasswordRestoresTokenWhenServiceFails(): void
+    {
+        $storedToken = 'a-valid-setup-token-value';
+        $savedValues = [];
+
+        $settings = $this->createMock(ModuleSettingBridgeInterface::class);
+        $settings->method('get')->willReturn($storedToken);
+        $settings->method('save')->willReturnCallback(
+            function (string $name, $value) use (&$savedValues): void {
+                $savedValues[] = $value;
+            }
+        );
+
+        $service = $this->createMock(ApiUserServiceInterface::class);
+        $service->method('setPasswordForApiUser')
+            ->willThrowException(new \RuntimeException('internal token table missing'));
+
+        $controller = new PasswordController(
+            $service,
+            $settings,
+            $this->createMock(TokenGeneratorInterface::class),
+            $this->createMock(TokenInvalidatorInterface::class)
+        );
+
+        try {
+            $controller->heartbeatSetPassword($storedToken, 'password123');
+            $this->fail('Expected SetPasswordFailedException');
+        } catch (SetPasswordFailedException $e) {
+            $this->assertInstanceOf(\RuntimeException::class, $e->getPrevious());
+        }
+
+        // Token is first cleared (TOCTOU), then restored because the service failed.
+        $this->assertSame(['', $storedToken], $savedValues, 'token must be cleared then restored on failure');
+    }
+
+    /**
+     * OXS-3068: on success the token stays cleared (not restored) and the
+     * mutation returns true.
+     */
+    public function testSetPasswordKeepsTokenClearedOnSuccess(): void
+    {
+        $storedToken = 'a-valid-setup-token-value';
+        $savedValues = [];
+
+        $settings = $this->createMock(ModuleSettingBridgeInterface::class);
+        $settings->method('get')->willReturn($storedToken);
+        $settings->method('save')->willReturnCallback(
+            function (string $name, $value) use (&$savedValues): void {
+                $savedValues[] = $value;
+            }
+        );
+
+        $service = $this->createMock(ApiUserServiceInterface::class);
+
+        $controller = new PasswordController(
+            $service,
+            $settings,
+            $this->createMock(TokenGeneratorInterface::class),
+            $this->createMock(TokenInvalidatorInterface::class)
+        );
+
+        $result = $controller->heartbeatSetPassword($storedToken, 'password123');
+
+        $this->assertTrue($result);
+        $this->assertSame([''], $savedValues, 'token is cleared once and not restored on success');
     }
 }
