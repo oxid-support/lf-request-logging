@@ -13,6 +13,7 @@ use Doctrine\DBAL\Connection;
 use OxidEsales\Eshop\Application\Model\User;
 use OxidEsales\EshopCommunity\Internal\Container\ContainerFactory;
 use OxidEsales\EshopCommunity\Internal\Framework\Database\QueryBuilderFactoryInterface;
+use OxidSupport\Heartbeat\Component\ApiUser\Controller\Admin\SetupController;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\ApiUserServiceInterface;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\TokenInvalidatorInterface;
 use OxidSupport\Heartbeat\Component\RequestLogger\Core\ModuleEvents;
@@ -107,6 +108,32 @@ final class TokenInvalidationTest extends TestCase
         $this->assertSame(1, $this->apiUserTokenCount());
 
         ModuleEvents::onDeactivate();
+
+        $this->assertSame(0, $this->apiUserTokenCount());
+    }
+
+    /**
+     * Isolated process: SetupController is an admin controller whose Config init
+     * calls session_cache_limiter(), which fails once another test in this class
+     * has already started a session and emitted output. A fresh process gives it
+     * a clean session/header state.
+     *
+     * @runInSeparateProcess
+     * @preserveGlobalState disabled
+     */
+    public function testSetupControllerInvalidateActionDropsApiUserTokens(): void
+    {
+        /**
+         * Admin-button action path (OXS-3058). The button delegates to the same
+         * TokenInvalidator the GraphQL mutation uses, but the controller path
+         * itself is exercised here so the admin entry point cannot silently
+         * break without the mutation breaking too.
+         */
+        $this->seedApiUserToken();
+        $this->assertSame(1, $this->apiUserTokenCount());
+
+        $controller = oxNew(SetupController::class);
+        $controller->invalidateTokens();
 
         $this->assertSame(0, $this->apiUserTokenCount());
     }
