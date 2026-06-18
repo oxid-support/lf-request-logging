@@ -61,9 +61,10 @@ jobs:
       uses: actions/cache@v5
       with:
         path: vendor
-        key: ${{ runner.os }}-php-${{ matrix.php-version }}-${{ hashFiles('**/composer.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-php-${{ matrix.php-version }}-
+        # composer.lock is gitignored, so key on composer.json: the cache then
+        # invalidates on dependency changes instead of being frozen on an empty
+        # lock hash. No broad restore-keys fallback (it would restore a stale vendor).
+        key: ${{ runner.os }}-php-${{ matrix.php-version }}-${{ hashFiles('**/composer.json') }}
 
     - name: Install dependencies
       run: composer install --prefer-dist --no-progress
@@ -94,9 +95,7 @@ jobs:
       uses: actions/cache@v5
       with:
         path: vendor
-        key: ${{ runner.os }}-php-8.2-${{ hashFiles('**/composer.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-php-8.2-
+        key: ${{ runner.os }}-php-8.2-${{ hashFiles('**/composer.json') }}
 
     - name: Install dependencies
       run: composer install --prefer-dist --no-progress
