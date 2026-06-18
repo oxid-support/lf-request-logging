@@ -53,6 +53,7 @@
             "@phpmd"
         ],
 
+        "test": "@tests-unit",
         "tests-unit": "phpunit -c tests/phpunit.xml --testsuite='Unit Tests'",
         "tests-integration": "phpunit -c tests/phpunit.integration.xml --testsuite='Integration Tests'",
         "tests-coverage": "XDEBUG_MODE=coverage phpunit -c tests/phpunit.xml --coverage-text --coverage-html=tests/Reports/CoverageHtml"
