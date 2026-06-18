@@ -13,6 +13,7 @@ use OxidEsales\EshopCommunity\Internal\Framework\Module\Facade\ModuleSettingServ
 use OxidSupport\Heartbeat\Module\Module;
 use OxidSupport\Heartbeat\Component\ApiUser\Exception\InvalidTokenException;
 use OxidSupport\Heartbeat\Component\ApiUser\Exception\PasswordTooShortException;
+use OxidSupport\Heartbeat\Component\ApiUser\Exception\SetPasswordFailedException;
 use OxidSupport\Heartbeat\Component\ApiUser\Exception\SetupNotAvailableException;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\ApiUserServiceInterface;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\TokenGeneratorInterface;
@@ -46,8 +47,18 @@ final class PasswordController
         // This ensures a second concurrent request with the same token will fail validation
         $this->moduleSettingService->saveString(Module::SETTING_APIUSER_SETUP_TOKEN, '', Module::ID);
 
-        // Delegate to service
-        $this->apiUserService->setPasswordForApiUser($password);
+        // OXS-3068: the token clear above and the password set below are not transactional.
+        // If setPasswordForApiUser throws (e.g. an internal token-table write hits a missing
+        // migration), the cleared token would be gone while the password stays unset, locking
+        // the service user out with no way to retry. Restore the token on failure so the setup
+        // stays retryable. The provided token equals the stored one (validateToken/hash_equals),
+        // so it can be restored verbatim.
+        try {
+            $this->apiUserService->setPasswordForApiUser($password);
+        } catch (\Throwable $e) {
+            $this->moduleSettingService->saveString(Module::SETTING_APIUSER_SETUP_TOKEN, $token, Module::ID);
+            throw new SetPasswordFailedException($e);
+        }
 
         return true;
     }

@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New GraphQL mutation `heartbeatInvalidateTokens` terminates sessions without resetting the password.
 - Edits to the service user in the OXID admin area (password, login email, active flag) terminate the sessions too.
 
+### Fixed
+- `heartbeatSetPassword` restores the setup token when the password update fails, keeping setup retryable instead of locking out the service user.
+
 ## [3.0.1] - 2026-06-02
 
 ### Changed
