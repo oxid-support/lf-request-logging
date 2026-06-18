@@ -61,9 +61,10 @@ jobs:
       uses: actions/cache@v5
       with:
         path: vendor
-        key: ${{ runner.os }}-php-${{ matrix.php-version }}-${{ hashFiles('**/composer.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-php-${{ matrix.php-version }}-
+        # composer.lock is gitignored, so key on composer.json: the cache then
+        # invalidates on dependency changes instead of being frozen on an empty
+        # lock hash. No broad restore-keys fallback (it would restore a stale vendor).
+        key: ${{ runner.os }}-php-${{ matrix.php-version }}-${{ hashFiles('**/composer.json') }}
 
     # PHP 7.4 and 8.0 cannot install dev deps (phpunit 10+ requires PHP 8.1+).
     # Only verify Composer resolve + PHP lint on those matrix entries.
