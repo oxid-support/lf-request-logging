@@ -34,6 +34,9 @@ final class SettingsControllerTest extends TestCase
         );
     }
 
+    /**
+     * @dataProvider componentActiveDataProvider
+     */
     #[DataProvider('componentActiveDataProvider')]
     public function testIsComponentActiveReturnsCorrectValue(bool $expectedValue): void
     {
@@ -149,6 +152,9 @@ final class SettingsControllerTest extends TestCase
         );
     }
 
+    /**
+     * @dataProvider statusClassDataProvider
+     */
     #[DataProvider('statusClassDataProvider')]
     public function testGetStatusClassReturnsCorrectValue(bool $isActive, string $expectedClass): void
     {
@@ -171,6 +177,9 @@ final class SettingsControllerTest extends TestCase
         ];
     }
 
+    /**
+     * @dataProvider statusTextKeyDataProvider
+     */
     #[DataProvider('statusTextKeyDataProvider')]
     public function testGetStatusTextKeyReturnsCorrectValue(bool $isActive, string $expectedKey): void
     {

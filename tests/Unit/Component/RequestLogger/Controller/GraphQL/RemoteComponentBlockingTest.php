@@ -33,6 +33,9 @@ final class RemoteComponentBlockingTest extends TestCase
     // SettingController Tests
     // ==========================================
 
+    /**
+     * @dataProvider settingControllerQueryMethodsProvider
+     */
     #[DataProvider('settingControllerQueryMethodsProvider')]
     public function testSettingControllerQueryBlocksWhenDisabled(string $method): void
     {

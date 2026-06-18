@@ -53,6 +53,9 @@ class LoggerFactorySecurityTest extends TestCase
     // PATH TRAVERSAL PREVENTION TESTS
     // ===========================================
 
+    /**
+     * @dataProvider pathTraversalProvider
+     */
     #[DataProvider('pathTraversalProvider')]
     public function testPathTraversalIsPreventedInFilename(string $maliciousInput, string $expectedSanitized): void
     {
@@ -82,6 +85,9 @@ class LoggerFactorySecurityTest extends TestCase
         ];
     }
 
+    /**
+     * @dataProvider validCorrelationIdProvider
+     */
     #[DataProvider('validCorrelationIdProvider')]
     public function testValidCorrelationIdsArePreserved(string $validId): void
     {
@@ -106,6 +112,9 @@ class LoggerFactorySecurityTest extends TestCase
     // FILENAME SANITIZATION TESTS
     // ===========================================
 
+    /**
+     * @dataProvider maliciousFilenameProvider
+     */
     #[DataProvider('maliciousFilenameProvider')]
     public function testMaliciousFilenamesAreSanitized(string $maliciousInput): void
     {

@@ -22,6 +22,9 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(AbstractComponentController::class)]
 final class AbstractComponentControllerTest extends TestCase
 {
+    /**
+     * @dataProvider statusClassDataProvider
+     */
     #[DataProvider('statusClassDataProvider')]
     public function testGetStatusClassReturnsCorrectValue(bool $isActive, string $expectedClass): void
     {
@@ -44,6 +47,9 @@ final class AbstractComponentControllerTest extends TestCase
         ];
     }
 
+    /**
+     * @dataProvider statusTextKeyDataProvider
+     */
     #[DataProvider('statusTextKeyDataProvider')]
     public function testGetStatusTextKeyReturnsCorrectValue(bool $isActive, string $expectedKey): void
     {
