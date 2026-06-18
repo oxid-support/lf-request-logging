@@ -21,7 +21,7 @@
         "oxid-esales/graphql-base": "^7.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "^9.5 || ^10.0",
+        "phpunit/phpunit": "^8.5",
         "phpstan/phpstan": "^2.0",
         "squizlabs/php_codesniffer": "^4.0",
         "phpmd/phpmd": "^2.15",
@@ -59,6 +59,7 @@
 
         "test": "@tests-unit",
         "tests-unit": "phpunit -c tests/phpunit.xml --testsuite='Unit Tests'",
+        "tests-integration": "phpunit -c tests/phpunit.integration.xml --testsuite='Integration Tests'",
         "tests-coverage": "XDEBUG_MODE=coverage phpunit -c tests/phpunit.xml --coverage-text --coverage-html=tests/Reports/CoverageHtml"
     },
     "config": {

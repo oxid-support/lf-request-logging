@@ -37,7 +37,7 @@ class CorrelationIdGeneratorTest extends TestCase
         $result = $this->generator->generate();
 
         $this->assertSame(32, strlen($result));
-        $this->assertMatchesRegularExpression('/^[0-9a-f]{32}$/', $result);
+        $this->assertRegExp('/^[0-9a-f]{32}$/', $result);
     }
 
     public function testGenerateReturnsLowercaseHexOnly(): void
@@ -45,7 +45,7 @@ class CorrelationIdGeneratorTest extends TestCase
         $result = $this->generator->generate();
 
         $this->assertSame(strtolower($result), $result);
-        $this->assertMatchesRegularExpression('/^[0-9a-f]+$/', $result);
+        $this->assertRegExp('/^[0-9a-f]+$/', $result);
     }
 
     public function testGenerateCreatesUniqueIds(): void

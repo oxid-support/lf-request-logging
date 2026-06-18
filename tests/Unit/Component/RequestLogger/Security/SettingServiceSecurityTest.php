@@ -83,6 +83,9 @@ class SettingServiceSecurityTest extends TestCase
         $this->assertEquals('[]', $result);
     }
 
+    /**
+     * @dataProvider maliciousJsonProvider
+     */
     #[DataProvider('maliciousJsonProvider')]
     public function testMaliciousJsonInputs(string $maliciousJson, bool $shouldReject): void
     {
@@ -120,6 +123,9 @@ class SettingServiceSecurityTest extends TestCase
     // LOG LEVEL INJECTION TESTS
     // ===========================================
 
+    /**
+     * @dataProvider maliciousLogLevelProvider
+     */
     #[DataProvider('maliciousLogLevelProvider')]
     public function testMaliciousLogLevelInputs(string $maliciousLogLevel): void
     {
@@ -189,7 +195,7 @@ class SettingServiceSecurityTest extends TestCase
 
         foreach ($settings as $setting) {
             // Verify no actual values are exposed
-            $this->assertObjectNotHasProperty('value', $setting);
+            $this->assertObjectNotHasAttribute('value', $setting);
         }
     }
 }

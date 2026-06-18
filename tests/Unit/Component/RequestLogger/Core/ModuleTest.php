@@ -68,7 +68,7 @@ final class ModuleTest extends TestCase
 
     public function testApiUserEmailConstantIsValidEmailFormat(): void
     {
-        $this->assertMatchesRegularExpression('/^[^\s@]+@[^\s@]+\.[^\s@]+$/', Module::API_USER_EMAIL);
+        $this->assertRegExp('/^[^\s@]+@[^\s@]+\.[^\s@]+$/', Module::API_USER_EMAIL);
     }
 
     public function testApiUserEmailConstantContainsOxidDomain(): void

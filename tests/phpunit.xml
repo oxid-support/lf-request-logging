@@ -1,24 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/8.5/phpunit.xsd"
          bootstrap="bootstrap.php"
          colors="true"
-         stopOnFailure="false"
-         cacheDirectory=".phpunit.cache">
+         stopOnFailure="false">
     <testsuites>
         <testsuite name="Unit Tests">
             <directory>Unit/</directory>
         </testsuite>
     </testsuites>
 
-    <source>
-        <include>
+    <filter>
+        <whitelist>
             <directory suffix=".php">../src</directory>
-        </include>
-        <exclude>
-            <directory>../src/Shop/Extend</directory>
-        </exclude>
-    </source>
+            <exclude>
+                <directory>../src/Shop/Extend</directory>
+            </exclude>
+        </whitelist>
+    </filter>
 
     <php>
         <ini name="error_reporting" value="-1"/>

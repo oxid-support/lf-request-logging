@@ -35,6 +35,9 @@ final class RemoteSetupControllerTest extends TestCase
         );
     }
 
+    /**
+     * @dataProvider componentActiveDataProvider
+     */
     #[DataProvider('componentActiveDataProvider')]
     public function testIsComponentActiveReturnsCorrectValue(bool $expectedValue): void
     {

@@ -41,7 +41,7 @@ class ModuleTest extends TestCase
 
     public function testModuleIdIsAlphanumeric(): void
     {
-        $this->assertMatchesRegularExpression('/^[a-z0-9]+$/', Module::ID);
+        $this->assertRegExp('/^[a-z0-9]+$/', Module::ID);
     }
 
     public function testModuleClassIsFinal(): void

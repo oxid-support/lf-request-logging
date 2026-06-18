@@ -53,6 +53,9 @@ class LoggerFactorySecurityTest extends TestCase
     // PATH TRAVERSAL PREVENTION TESTS
     // ===========================================
 
+    /**
+     * @dataProvider pathTraversalProvider
+     */
     #[DataProvider('pathTraversalProvider')]
     public function testPathTraversalIsPreventedInFilename(string $maliciousInput, string $expectedSanitized): void
     {
@@ -82,6 +85,9 @@ class LoggerFactorySecurityTest extends TestCase
         ];
     }
 
+    /**
+     * @dataProvider validCorrelationIdProvider
+     */
     #[DataProvider('validCorrelationIdProvider')]
     public function testValidCorrelationIdsArePreserved(string $validId): void
     {
@@ -106,13 +112,16 @@ class LoggerFactorySecurityTest extends TestCase
     // FILENAME SANITIZATION TESTS
     // ===========================================
 
+    /**
+     * @dataProvider maliciousFilenameProvider
+     */
     #[DataProvider('maliciousFilenameProvider')]
     public function testMaliciousFilenamesAreSanitized(string $maliciousInput): void
     {
         $sanitized = $this->invokeSanitizeFilename($maliciousInput);
 
         // Result should only contain safe characters
-        $this->assertMatchesRegularExpression('/^[a-zA-Z0-9\-_]+$/', $sanitized);
+        $this->assertRegExp('/^[a-zA-Z0-9\-_]+$/', $sanitized);
 
         // Result should not be empty
         $this->assertNotEmpty($sanitized);
@@ -139,7 +148,7 @@ class LoggerFactorySecurityTest extends TestCase
         $sanitized = $this->invokeSanitizeFilename('');
 
         $this->assertStringStartsWith('fallback-', $sanitized);
-        $this->assertMatchesRegularExpression('/^fallback-\d+$/', $sanitized);
+        $this->assertRegExp('/^fallback-\d+$/', $sanitized);
     }
 
     public function testOnlySpecialCharsGeneratesFallback(): void

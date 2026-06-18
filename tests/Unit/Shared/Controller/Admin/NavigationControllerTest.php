@@ -38,6 +38,9 @@ final class NavigationControllerTest extends TestCase
 {
     private const SETTING_REQUESTLOGGER_ACTIVE = Module::SETTING_REQUESTLOGGER_ACTIVE;
 
+    /**
+     * @dataProvider componentStatusDataProvider
+     */
     #[DataProvider('componentStatusDataProvider')]
     public function testGetHeartbeatComponentStatusReturnsCorrectValues(
         bool $apiUserSetupComplete,

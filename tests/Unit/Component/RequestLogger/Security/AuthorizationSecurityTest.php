@@ -23,6 +23,9 @@ class AuthorizationSecurityTest extends TestCase
     // SETTING CONTROLLER AUTHORIZATION
     // ===========================================
 
+    /**
+     * @dataProvider settingControllerMethodsProvider
+     */
     #[DataProvider('settingControllerMethodsProvider')]
     public function testSettingControllerMethodsRequireAuth(string $method): void
     {
