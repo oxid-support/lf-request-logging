@@ -34,15 +34,16 @@ jobs:
       run: ~/.composer/vendor/bin/phpcs --standard=tests/phpcompat.xml -p
 
   build:
+    name: build (OXID 7.1)
     needs: phpcompatibility
     runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
       matrix:
-        # PHP 8.1 is omitted: with the 7.1-7.5 range it only resolves the
-        # unmaintained oxideshop-ce 7.1.0, whose namespace generator is unreliable.
-        php-version: ['8.2', '8.3', '8.4', '8.5']
+        # OXID 7.1 line runs on PHP 8.2-8.3 (the maintained 7.1.1 stack needs 8.2+;
+        # 7.1.x does not install on 8.4/8.5). Other lines (7.2-7.5) are placeholders.
+        php-version: ['8.2', '8.3']
 
     steps:
     - uses: actions/checkout@v6
@@ -55,24 +56,23 @@ jobs:
     - name: PHP Lint
       run: find src/ -name '*.php' -print0 | xargs -0 -n1 php -l
 
-    - name: Validate composer.json and composer.lock
+    - name: Validate composer.json
       run: composer validate --strict
+
+    - name: Constrain to the OXID 7.1 line
+      # composer.json stays loose (7.1-7.5); the build pins the 7.1 line here so
+      # this job really exercises OXID 7.1 instead of resolving the latest in range.
+      run: composer require --no-update oxid-esales/oxideshop-ce:'~7.1.0' oxid-esales/graphql-base:'^9.0'
 
     - name: Cache Composer packages
       id: composer-cache
       uses: actions/cache@v5
       with:
         path: vendor
-        # composer.lock is gitignored, so key on composer.json: the cache then
-        # invalidates on dependency changes instead of being frozen on an empty
-        # lock hash. No broad restore-keys fallback (it would restore a stale vendor).
-        key: ${{ runner.os }}-php-${{ matrix.php-version }}-${{ hashFiles('**/composer.json') }}
+        key: ${{ runner.os }}-php-${{ matrix.php-version }}-oxid7.1-${{ hashFiles('**/composer.json') }}
 
     - name: Install dependencies
-      run: composer install --prefer-dist --no-progress
-
-    # Add a test script to composer.json, for instance: "test": "vendor/bin/phpunit"
-    # Docs: https://getcomposer.org/doc/articles/scripts.md
+      run: composer update --prefer-dist --no-progress
 
     - name: Run static tests suite
       run: composer run-script static
@@ -108,17 +108,17 @@ jobs:
     - name: Run Psalm Taint Analysis
       run: php psalm.phar --taint-analysis
 
-  # Placeholder jobs: b-7.1.x is compatible with OXID 7.1 through 7.5, so every
-  # change must eventually be checked against each line. These dummy jobs make
-  # that planned coverage visible now; they do not run real checks yet and will
-  # be replaced with per-version build/test steps once implemented.
+  # Placeholder jobs: b-7.1.x is compatible with OXID 7.1 through 7.5. OXID 7.1 is
+  # really built above; 7.2-7.5 are not exercised yet. These dummy jobs make the
+  # planned coverage visible now and will be replaced with real per-version
+  # build/test steps once implemented.
   oxid-compatibility:
     name: OXID compatibility (planned)
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        oxid: ['7.1', '7.2', '7.3', '7.4', '7.5']
+        oxid: ['7.2', '7.3', '7.4', '7.5']
     steps:
       - run: echo "OXID ${{ matrix.oxid }} compatibility check is planned (placeholder, not yet implemented)"
 
