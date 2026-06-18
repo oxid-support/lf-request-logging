@@ -99,16 +99,16 @@ final class ApiUserServiceTest extends TestCase
         $this->assertEquals('void', $returnType->getName());
     }
 
-    public function testConstructorRequiresQueryBuilderFactory(): void
+    public function testConstructorRequiresDependencies(): void
     {
         $reflection = new \ReflectionClass(ApiUserService::class);
         $constructor = $reflection->getConstructor();
 
         $this->assertNotNull($constructor);
-        $this->assertCount(1, $constructor->getParameters());
+        $this->assertCount(2, $constructor->getParameters());
 
-        $param = $constructor->getParameters()[0];
-        $this->assertEquals('queryBuilderFactory', $param->getName());
+        $this->assertEquals('queryBuilderFactory', $constructor->getParameters()[0]->getName());
+        $this->assertEquals('tokenInvalidator', $constructor->getParameters()[1]->getName());
     }
 
     public function testAllMethodsArePublic(): void

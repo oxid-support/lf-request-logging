@@ -64,20 +64,24 @@ final class PermissionProviderTest extends TestCase
         $this->assertContains('OXSHEARTBEAT_PASSWORD_RESET', $permissions['oxidadmin']);
     }
 
-    public function testApiUserGroupHasExactlyOnePermission(): void
+    public function testApiUserGroupHasExpectedPermissions(): void
     {
         $provider = new PermissionProvider();
         $permissions = $provider->getPermissions();
 
-        $this->assertCount(1, $permissions['oxsheartbeat_api']);
+        $this->assertCount(2, $permissions['oxsheartbeat_api']);
+        $this->assertContains('OXSHEARTBEAT_PASSWORD_RESET', $permissions['oxsheartbeat_api']);
+        $this->assertContains('OXSHEARTBEAT_TOKEN_INVALIDATE', $permissions['oxsheartbeat_api']);
     }
 
-    public function testAdminGroupHasExactlyOnePermission(): void
+    public function testAdminGroupHasExpectedPermissions(): void
     {
         $provider = new PermissionProvider();
         $permissions = $provider->getPermissions();
 
-        $this->assertCount(1, $permissions['oxidadmin']);
+        $this->assertCount(2, $permissions['oxidadmin']);
+        $this->assertContains('OXSHEARTBEAT_PASSWORD_RESET', $permissions['oxidadmin']);
+        $this->assertContains('OXSHEARTBEAT_TOKEN_INVALIDATE', $permissions['oxidadmin']);
     }
 
     public function testBothGroupsHaveSamePermissions(): void

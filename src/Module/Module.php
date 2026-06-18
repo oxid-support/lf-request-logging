@@ -24,6 +24,7 @@ final class Module
         'token',
         'heartbeatSetPassword',
         'heartbeatResetPassword',
+        'heartbeatInvalidateTokens',
         'requestLoggerSettings',
         'requestLoggerLogLevel',
         'requestLoggerLogLevelChange',
