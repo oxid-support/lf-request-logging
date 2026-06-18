@@ -13,6 +13,12 @@ class_alias(
     \OxidSupport\Heartbeat\Shared\Controller\Admin\NavigationController_parent::class
 );
 
+// Create class alias for the User extension parent (OXS-3060 service-user override)
+class_alias(
+    \OxidEsales\Eshop\Application\Model\User::class,
+    \OxidSupport\Heartbeat\Shop\Extend\Application\Model\User_parent::class
+);
+
 // Bridge ModuleSettingBridgeInterface namespace difference between OXID 6.5 and 7.x
 $ns = 'OxidEsales\EshopCommunity\Internal\Framework\Module\\';
 $newInterface = $ns . 'Setting\Bridge\ModuleSettingBridgeInterface';
