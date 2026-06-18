@@ -40,9 +40,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Maintained OXID 7.1.x (7.1.1+) and its unified-namespace-generator
-        # require PHP 8.2+; PHP 8.1 only resolves the unmaintained 7.1.0 stack.
-        php-version: ['8.2', '8.3']
+        # PHP 8.1 is omitted: with the 7.1-7.5 range it only resolves the
+        # unmaintained oxideshop-ce 7.1.0, whose namespace generator is unreliable.
+        php-version: ['8.2', '8.3', '8.4', '8.5']
 
     steps:
     - uses: actions/checkout@v6
@@ -107,6 +107,20 @@ jobs:
 
     - name: Run Psalm Taint Analysis
       run: php psalm.phar --taint-analysis
+
+  # Placeholder jobs: b-7.1.x is compatible with OXID 7.1 through 7.5, so every
+  # change must eventually be checked against each line. These dummy jobs make
+  # that planned coverage visible now; they do not run real checks yet and will
+  # be replaced with per-version build/test steps once implemented.
+  oxid-compatibility:
+    name: OXID compatibility (planned)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        oxid: ['7.1', '7.2', '7.3', '7.4', '7.5']
+    steps:
+      - run: echo "Placeholder: dedicated compatibility check for OXID ${{ matrix.oxid }} is planned, not yet implemented."
 
   notify-devops:
     name: Notify DevOps Repo
