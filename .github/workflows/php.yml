@@ -66,7 +66,7 @@ jobs:
 
     - name: Cache Composer packages
       id: composer-cache
-      uses: actions/cache@v5
+      uses: actions/cache@v6
       with:
         path: vendor
         key: ${{ runner.os }}-php-${{ matrix.php-version }}-oxid7.1-${{ hashFiles('**/composer.json') }}
@@ -94,7 +94,7 @@ jobs:
         php-version: '8.2'
 
     - name: Cache Composer packages
-      uses: actions/cache@v5
+      uses: actions/cache@v6
       with:
         path: vendor
         key: ${{ runner.os }}-php-8.2-${{ hashFiles('**/composer.json') }}
