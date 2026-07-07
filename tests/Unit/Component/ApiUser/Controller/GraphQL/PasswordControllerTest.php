@@ -15,8 +15,7 @@ use OxidSupport\Heartbeat\Component\ApiUser\Exception\InvalidTokenException;
 use OxidSupport\Heartbeat\Component\ApiUser\Exception\PasswordTooShortException;
 use OxidSupport\Heartbeat\Component\ApiUser\Exception\SetPasswordFailedException;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\ApiUserServiceInterface;
-use OxidSupport\Heartbeat\Component\ApiUser\Service\TokenGeneratorInterface;
-use OxidSupport\Heartbeat\Component\ApiUser\Service\TokenInvalidatorInterface;
+use OxidSupport\Heartbeat\Module\Module;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
@@ -50,42 +49,6 @@ final class PasswordControllerTest extends TestCase
         );
     }
 
-    public function testResetPasswordMethodHasMutationAttribute(): void
-    {
-        $reflection = new ReflectionMethod(PasswordController::class, 'heartbeatResetPassword');
-        $attributes = $this->getAttributeNames($reflection);
-
-        $this->assertContains(
-            'TheCodingMachine\GraphQLite\Annotations\Mutation',
-            $attributes,
-            "heartbeatResetPassword must have #[Mutation] attribute"
-        );
-    }
-
-    public function testResetPasswordRequiresAuthentication(): void
-    {
-        $reflection = new ReflectionMethod(PasswordController::class, 'heartbeatResetPassword');
-        $attributes = $this->getAttributeNames($reflection);
-
-        $this->assertContains(
-            'TheCodingMachine\GraphQLite\Annotations\Logged',
-            $attributes,
-            "heartbeatResetPassword must have #[Logged] attribute"
-        );
-    }
-
-    public function testResetPasswordRequiresSpecificRight(): void
-    {
-        $reflection = new ReflectionMethod(PasswordController::class, 'heartbeatResetPassword');
-        $attributes = $this->getAttributeNames($reflection);
-
-        $this->assertContains(
-            'TheCodingMachine\GraphQLite\Annotations\Right',
-            $attributes,
-            "heartbeatResetPassword must have #[Right] attribute"
-        );
-    }
-
     public function testSetPasswordMethodIsPublic(): void
     {
         $reflection = new ReflectionMethod(PasswordController::class, 'heartbeatSetPassword');
@@ -93,19 +56,10 @@ final class PasswordControllerTest extends TestCase
         $this->assertTrue($reflection->isPublic());
     }
 
-    public function testResetPasswordMethodIsPublic(): void
-    {
-        $reflection = new ReflectionMethod(PasswordController::class, 'heartbeatResetPassword');
-
-        $this->assertTrue($reflection->isPublic());
-    }
-
     public function testSetPasswordHasTokenParameter(): void
     {
         $reflection = new ReflectionMethod(PasswordController::class, 'heartbeatSetPassword');
-        $parameters = $reflection->getParameters();
-
-        $parameterNames = array_map(fn($p) => $p->getName(), $parameters);
+        $parameterNames = array_map(fn($p) => $p->getName(), $reflection->getParameters());
 
         $this->assertContains('token', $parameterNames);
     }
@@ -113,9 +67,7 @@ final class PasswordControllerTest extends TestCase
     public function testSetPasswordHasPasswordParameter(): void
     {
         $reflection = new ReflectionMethod(PasswordController::class, 'heartbeatSetPassword');
-        $parameters = $reflection->getParameters();
-
-        $parameterNames = array_map(fn($p) => $p->getName(), $parameters);
+        $parameterNames = array_map(fn($p) => $p->getName(), $reflection->getParameters());
 
         $this->assertContains('password', $parameterNames);
     }
@@ -129,13 +81,26 @@ final class PasswordControllerTest extends TestCase
         $this->assertEquals('bool', $returnType->getName());
     }
 
-    public function testResetPasswordReturnsString(): void
+    /**
+     * heartbeatResetPassword and heartbeatInvalidateTokens were removed from the
+     * GraphQL surface: they had no legitimate remote caller (the service user is
+     * barred, the admin uses the backend UI which calls the services directly,
+     * the dashboard never called them). Guard against reintroducing them as
+     * remote attack surface.
+     */
+    public function testRemovedGraphqlMutationsAreGone(): void
     {
-        $reflection = new ReflectionMethod(PasswordController::class, 'heartbeatResetPassword');
-        $returnType = $reflection->getReturnType();
+        $this->assertFalse(
+            method_exists(PasswordController::class, 'heartbeatResetPassword'),
+            'heartbeatResetPassword must not be exposed as a GraphQL mutation'
+        );
+        $this->assertFalse(
+            method_exists(PasswordController::class, 'heartbeatInvalidateTokens'),
+            'heartbeatInvalidateTokens must not be exposed as a GraphQL mutation'
+        );
 
-        $this->assertNotNull($returnType);
-        $this->assertEquals('string', $returnType->getName());
+        $this->assertNotContains('heartbeatResetPassword', Module::SUPPORTED_OPERATIONS);
+        $this->assertNotContains('heartbeatInvalidateTokens', Module::SUPPORTED_OPERATIONS);
     }
 
     /**
@@ -152,8 +117,6 @@ final class PasswordControllerTest extends TestCase
         $controller = new PasswordController(
             $this->createMock(ApiUserServiceInterface::class),
             $settings,
-            $this->createMock(TokenGeneratorInterface::class),
-            $this->createMock(TokenInvalidatorInterface::class),
         );
 
         $this->expectException(InvalidTokenException::class);
@@ -170,8 +133,6 @@ final class PasswordControllerTest extends TestCase
         $controller = new PasswordController(
             $this->createMock(ApiUserServiceInterface::class),
             $settings,
-            $this->createMock(TokenGeneratorInterface::class),
-            $this->createMock(TokenInvalidatorInterface::class),
         );
 
         $this->expectException(PasswordTooShortException::class);
@@ -200,12 +161,7 @@ final class PasswordControllerTest extends TestCase
         $service->method('setPasswordForApiUser')
             ->willThrowException(new \RuntimeException('internal token table missing'));
 
-        $controller = new PasswordController(
-            $service,
-            $settings,
-            $this->createMock(TokenGeneratorInterface::class),
-            $this->createMock(TokenInvalidatorInterface::class),
-        );
+        $controller = new PasswordController($service, $settings);
 
         try {
             $controller->heartbeatSetPassword($storedToken, 'a-strong-password-1234');
@@ -237,12 +193,7 @@ final class PasswordControllerTest extends TestCase
 
         $service = $this->createMock(ApiUserServiceInterface::class);
 
-        $controller = new PasswordController(
-            $service,
-            $settings,
-            $this->createMock(TokenGeneratorInterface::class),
-            $this->createMock(TokenInvalidatorInterface::class),
-        );
+        $controller = new PasswordController($service, $settings);
 
         $result = $controller->heartbeatSetPassword($storedToken, 'a-strong-password-1234');
 
@@ -250,11 +201,11 @@ final class PasswordControllerTest extends TestCase
         $this->assertSame([''], $savedValues, 'token is cleared once and not restored on success');
     }
 
+    /**
+     * @return string[]
+     */
     private function getAttributeNames(ReflectionMethod $reflection): array
     {
-        return array_map(
-            fn($attr) => $attr->getName(),
-            $reflection->getAttributes()
-        );
+        return array_map(fn($attr) => $attr->getName(), $reflection->getAttributes());
     }
 }

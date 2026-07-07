@@ -16,6 +16,7 @@ use OxidEsales\EshopCommunity\Internal\Framework\Database\QueryBuilderFactoryInt
 use OxidEsales\GraphQL\Base\Tests\Integration\TokenTestCase;
 use OxidSupport\Heartbeat\Component\ApiUser\Controller\Admin\SetupController;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\ApiUserServiceInterface;
+use OxidSupport\Heartbeat\Component\ApiUser\Service\TokenInvalidatorInterface;
 use OxidSupport\Heartbeat\Component\RequestLogger\Core\ModuleEvents;
 use OxidSupport\Heartbeat\Module\Module;
 
@@ -50,28 +51,30 @@ final class TokenInvalidationTest extends TokenTestCase
         );
     }
 
-    public function testInvalidateTokensMutationDropsApiUserTokens(): void
+    public function testInvalidatorServiceDropsApiUserTokens(): void
     {
+        // Token invalidation is a shop-admin action (admin UI button /
+        // password reset / module deactivation), driven through the
+        // TokenInvalidator service. There is no longer a GraphQL mutation for
+        // it, so it is asserted at the service boundary.
         $baseline = $this->apiUserTokenCount();
         $this->seedApiUserToken();
         $this->assertSame($baseline + 1, $this->apiUserTokenCount());
 
-        $this->prepareToken(); // admin (oxidadmin) carries the token-invalidate right
-        $result = $this->query('mutation { heartbeatInvalidateTokens }');
+        ContainerFactory::getInstance()
+            ->getContainer()
+            ->get(TokenInvalidatorInterface::class)
+            ->invalidateForApiUser();
 
-        $this->assertArrayNotHasKey('errors', $result['body'], $this->dump($result));
-        $this->assertSame($baseline + 1, $result['body']['data']['heartbeatInvalidateTokens']);
         $this->assertSame(0, $this->apiUserTokenCount());
     }
 
     public function testResetPasswordDropsApiUserTokens(): void
     {
         // Asserted at the service boundary, which is the exact point OXS-3054
-        // wires token invalidation into the password reset. The GraphQL stack
-        // (auth + right + mutation) is already covered by the
-        // heartbeatInvalidateTokens test above; the heartbeatResetPassword
-        // controller additionally persists a module setting, which the
-        // in-process TestContainer does not provide.
+        // wires token invalidation into the password reset. The reset also
+        // persists a module setting, which the in-process TestContainer does
+        // not provide, so it is exercised through the service here.
         $baseline = $this->apiUserTokenCount();
         $this->seedApiUserToken();
         $this->assertSame($baseline + 1, $this->apiUserTokenCount());
@@ -108,10 +111,9 @@ final class TokenInvalidationTest extends TokenTestCase
     public function testSetupControllerInvalidateActionDropsApiUserTokens(): void
     {
         /**
-         * Admin-button action path (OXS-3058). The button delegates to the same
-         * TokenInvalidator the GraphQL mutation uses, but the controller path
-         * itself is exercised here so the admin entry point cannot silently
-         * break without the mutation breaking too.
+         * Admin-button action path (OXS-3058). The button delegates to the TokenInvalidator service; the controller
+         * path itself is exercised here so the admin entry point cannot
+         * silently break.
          */
         $baseline = $this->apiUserTokenCount();
         $this->seedApiUserToken();
@@ -168,10 +170,5 @@ final class TokenInvalidationTest extends TokenTestCase
             'SELECT COUNT(*) FROM oegraphqltoken WHERE OXUSERID = :uid',
             ['uid' => $this->apiUserId]
         )->fetchOne();
-    }
-
-    private function dump(array $result): string
-    {
-        return (string) json_encode($result['body'] ?? $result);
     }
 }

@@ -15,19 +15,13 @@ use OxidSupport\Heartbeat\Component\ApiUser\Exception\InvalidTokenException;
 use OxidSupport\Heartbeat\Component\ApiUser\Exception\PasswordTooShortException;
 use OxidSupport\Heartbeat\Component\ApiUser\Exception\SetPasswordFailedException;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\ApiUserServiceInterface;
-use OxidSupport\Heartbeat\Component\ApiUser\Service\TokenGeneratorInterface;
-use OxidSupport\Heartbeat\Component\ApiUser\Service\TokenInvalidatorInterface;
-use TheCodingMachine\GraphQLite\Annotations\Logged;
 use TheCodingMachine\GraphQLite\Annotations\Mutation;
-use TheCodingMachine\GraphQLite\Annotations\Right;
 
 final class PasswordController
 {
     public function __construct(
         private ApiUserServiceInterface $apiUserService,
         private ModuleSettingServiceInterface $moduleSettingService,
-        private TokenGeneratorInterface $tokenGenerator,
-        private TokenInvalidatorInterface $tokenInvalidator,
     ) {
     }
 
@@ -63,43 +57,6 @@ final class PasswordController
         }
 
         return true;
-    }
-
-    /**
-     * Invalidate all JWTs of the heartbeat-api service user without resetting
-     * the password. Useful when the service password should remain intact and
-     * the existing JWTs should still be revoked. See OXS-3059.
-     *
-     * @return int number of tokens deleted
-     */
-    #[Mutation]
-    #[Logged]
-    #[Right('OXSHEARTBEAT_TOKEN_INVALIDATE')]
-    public function heartbeatInvalidateTokens(): int
-    {
-        return $this->tokenInvalidator->invalidateForApiUser();
-    }
-
-    /**
-     * Reset the password for the Heartbeat API user to a placeholder value.
-     * This generates a new setup token that can be used with heartbeatSetPassword.
-     * Requires admin authentication.
-     */
-    #[Mutation]
-    #[Logged]
-    #[Right('OXSHEARTBEAT_PASSWORD_RESET')]
-    public function heartbeatResetPassword(): string
-    {
-        // Generate new setup token
-        $token = $this->tokenGenerator->generate();
-
-        // Delegate to service
-        $this->apiUserService->resetPasswordForApiUser();
-
-        // Save token
-        $this->moduleSettingService->saveString(Module::SETTING_APIUSER_SETUP_TOKEN, $token, Module::ID);
-
-        return $token;
     }
 
     private function validateToken(string $token): void
