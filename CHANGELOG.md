@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New GraphQL mutation `heartbeatInvalidateTokens` terminates sessions without resetting the password.
 - Edits to the service user in the OXID admin area (password, login email, active flag) terminate the sessions too.
 
+### Removed
+- GraphQL mutation `requestLoggerRedactChange`. The redact field list (values that are always redacted from request logs, even when "redact all values" is disabled) can now only be changed by the shop admin via the module's admin settings page. The read query `requestLoggerRedact` is unaffected. Removed with it: `SettingServiceInterface::setRedactItems()` and the internal exception class `InvalidCollectionException` (PHP-level BC break for code extending the remote setting service).
+
 ### Fixed
 - `heartbeatSetPassword` restores the setup token when the password update fails, keeping setup retryable instead of locking out the service user.
 

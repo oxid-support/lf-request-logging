@@ -110,15 +110,6 @@ final class SettingController
     #[Mutation]
     #[Logged]
     #[Right('REQUEST_LOGGER_CHANGE')]
-    public function requestLoggerRedactChange(string $value): string
-    {
-        $this->componentStatusService->assertComponentActive();
-        return $this->settingService->setRedactItems($value);
-    }
-
-    #[Mutation]
-    #[Logged]
-    #[Right('REQUEST_LOGGER_CHANGE')]
     public function requestLoggerRedactAllValuesChange(bool $value): bool
     {
         $this->componentStatusService->assertComponentActive();

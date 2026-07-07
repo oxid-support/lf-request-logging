@@ -11,7 +11,6 @@ namespace OxidSupport\Heartbeat\Component\RequestLogger\Service\Remote;
 
 use OxidEsales\EshopCommunity\Internal\Framework\Module\Configuration\Bridge\ModuleSettingBridgeInterface;
 use OxidSupport\Heartbeat\Component\RequestLogger\DataType\SettingType;
-use OxidSupport\Heartbeat\Component\RequestLogger\Exception\InvalidCollectionException;
 use OxidSupport\Heartbeat\Module\Module as RequestLoggerModule;
 
 /**
@@ -112,29 +111,6 @@ final class SettingService implements SettingServiceInterface
         }
 
         return is_string($value) ? $value : '[]';
-    }
-
-    public function setRedactItems(string $jsonValue): string
-    {
-        $items = json_decode($jsonValue, true);
-
-        if (!is_array($items)) {
-            throw new InvalidCollectionException('Invalid JSON array provided for redact items');
-        }
-
-        if ($items !== array_values($items)) {
-            throw new InvalidCollectionException(
-                'Invalid JSON array provided for redact items - must be a list, not an object'
-            );
-        }
-
-        $this->moduleSettingService->save(
-            self::SETTING_REDACT,
-            $items,
-            RequestLoggerModule::ID
-        );
-
-        return $jsonValue;
     }
 
     public function isRedactAllValuesEnabled(): bool
