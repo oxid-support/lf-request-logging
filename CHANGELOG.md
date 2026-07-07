@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Active sessions of the `heartbeat-api` service user are terminated immediately on password reset and on module deactivation.
 - New admin button "Terminate API Sessions" in the API user setup UI.
 - Edits to the service user in the OXID admin area (password, login email, active flag) terminate the sessions too.
+- GraphQL mutation `heartbeatInvalidateTokens` (callable by the service user) revokes all of the service user's JWTs, giving OXID Support a remote kill switch for a leaked token without resetting the password.
 - Integration tests no longer assume an empty `oegraphqltoken` baseline; they are stable on shops with existing API-user tokens.
 
 ### Added
@@ -17,14 +18,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 - GraphQL mutation `requestLoggerRedactChange`. The redact field list (values that are always redacted from request logs, even when "redact all values" is disabled) can now only be changed by the shop admin via the module's admin settings page. The read query `requestLoggerRedact` is unaffected. Removed with it: `SettingServiceInterface::setRedactItems()` and the internal exception class `InvalidCollectionException` (PHP-level BC break for code extending the remote setting service).
-- GraphQL mutations `heartbeatResetPassword` and `heartbeatInvalidateTokens` removed from the API. They had no legitimate remote caller: the service user is not permitted to call them, the shop admin performs password reset and session termination in the module's admin UI, and the dashboard never called them. `heartbeatResetPassword` was part of released versions, so this is a breaking change for any GraphQL client that called it.
+- GraphQL mutation `heartbeatResetPassword` removed from the API. Resetting the service user's password is a shop-admin action in the module admin UI; it is no longer exposed over GraphQL, where a stolen token could otherwise rotate the password to re-establish access. It was part of released versions, so this is a breaking change for any GraphQL client that called it (the dashboard does not).
 
 ### Fixed
 - `heartbeatSetPassword` restores the setup token when the password update fails, keeping setup retryable instead of locking out the service user.
 
 ### Security
 - Setup token now uses a CSPRNG (`random_bytes`) instead of `md5(uniqid())`, closing a predictable-token path to taking over the API user via the unauthenticated `heartbeatSetPassword`.
-- GraphQL mutations `heartbeatResetPassword` and `heartbeatInvalidateTokens` are removed entirely (see Removed), eliminating the path where a leaked service-user JWT could reset its own password and re-establish access after token invalidation. Both operations remain available to the shop admin in the module UI.
+- Leak response for a compromised service-user token: `heartbeatInvalidateTokens` (callable by the service user) revokes all of its JWTs including a stolen one, while `heartbeatResetPassword` and the service user's password-reset right are removed. A token thief cannot rotate the password to re-establish access, and support re-authenticates with the password it holds.
 - Sensitive-data redaction now recurses into nested arrays/objects, so a blocklisted key (e.g. `password`) nested in a request body is no longer logged in clear.
 - Query parameters in the logged `uri` and `referer` are redacted in blocklist mode too, not only in redact-all mode; the session id is pseudonymized instead of logged raw.
 - Log injection hardened: the log formatter no longer allows inline line breaks, and a client-supplied correlation id is validated (and regenerated if malformed) before it reaches the log.

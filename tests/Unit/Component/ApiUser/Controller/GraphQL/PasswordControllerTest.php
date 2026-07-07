@@ -15,6 +15,7 @@ use OxidSupport\Heartbeat\Component\ApiUser\Exception\InvalidTokenException;
 use OxidSupport\Heartbeat\Component\ApiUser\Exception\PasswordTooShortException;
 use OxidSupport\Heartbeat\Component\ApiUser\Exception\SetPasswordFailedException;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\ApiUserServiceInterface;
+use OxidSupport\Heartbeat\Component\ApiUser\Service\TokenInvalidatorInterface;
 use OxidSupport\Heartbeat\Module\Module;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -82,25 +83,47 @@ final class PasswordControllerTest extends TestCase
     }
 
     /**
-     * heartbeatResetPassword and heartbeatInvalidateTokens were removed from the
-     * GraphQL surface: they had no legitimate remote caller (the service user is
-     * barred, the admin uses the backend UI which calls the services directly,
-     * the dashboard never called them). Guard against reintroducing them as
-     * remote attack surface.
+     * heartbeatResetPassword stays removed from the GraphQL surface: a stolen
+     * token must never be able to rotate the password to re-establish access.
      */
-    public function testRemovedGraphqlMutationsAreGone(): void
+    public function testResetPasswordMutationStaysRemoved(): void
     {
         $this->assertFalse(
             method_exists(PasswordController::class, 'heartbeatResetPassword'),
             'heartbeatResetPassword must not be exposed as a GraphQL mutation'
         );
-        $this->assertFalse(
+        $this->assertNotContains('heartbeatResetPassword', Module::SUPPORTED_OPERATIONS);
+    }
+
+    public function testInvalidateTokensMutationExistsAsKillSwitch(): void
+    {
+        $this->assertTrue(
             method_exists(PasswordController::class, 'heartbeatInvalidateTokens'),
-            'heartbeatInvalidateTokens must not be exposed as a GraphQL mutation'
+            'heartbeatInvalidateTokens must be available as the leak-response kill switch'
+        );
+        $this->assertContains('heartbeatInvalidateTokens', Module::SUPPORTED_OPERATIONS);
+
+        $reflection = new ReflectionMethod(PasswordController::class, 'heartbeatInvalidateTokens');
+        $attributes = $this->getAttributeNames($reflection);
+        $this->assertContains('TheCodingMachine\GraphQLite\Annotations\Mutation', $attributes);
+        $this->assertContains('TheCodingMachine\GraphQLite\Annotations\Logged', $attributes);
+        $this->assertContains('TheCodingMachine\GraphQLite\Annotations\Right', $attributes);
+    }
+
+    public function testInvalidateTokensDelegatesToInvalidatorAndReturnsCount(): void
+    {
+        $invalidator = $this->createMock(TokenInvalidatorInterface::class);
+        $invalidator->expects($this->once())
+            ->method('invalidateForApiUser')
+            ->willReturn(3);
+
+        $controller = new PasswordController(
+            $this->createMock(ApiUserServiceInterface::class),
+            $this->createMock(ModuleSettingServiceInterface::class),
+            $invalidator,
         );
 
-        $this->assertNotContains('heartbeatResetPassword', Module::SUPPORTED_OPERATIONS);
-        $this->assertNotContains('heartbeatInvalidateTokens', Module::SUPPORTED_OPERATIONS);
+        $this->assertSame(3, $controller->heartbeatInvalidateTokens());
     }
 
     /**
@@ -117,6 +140,7 @@ final class PasswordControllerTest extends TestCase
         $controller = new PasswordController(
             $this->createMock(ApiUserServiceInterface::class),
             $settings,
+            $this->createMock(TokenInvalidatorInterface::class),
         );
 
         $this->expectException(InvalidTokenException::class);
@@ -133,6 +157,7 @@ final class PasswordControllerTest extends TestCase
         $controller = new PasswordController(
             $this->createMock(ApiUserServiceInterface::class),
             $settings,
+            $this->createMock(TokenInvalidatorInterface::class),
         );
 
         $this->expectException(PasswordTooShortException::class);
@@ -161,7 +186,7 @@ final class PasswordControllerTest extends TestCase
         $service->method('setPasswordForApiUser')
             ->willThrowException(new \RuntimeException('internal token table missing'));
 
-        $controller = new PasswordController($service, $settings);
+        $controller = new PasswordController($service, $settings, $this->createMock(TokenInvalidatorInterface::class));
 
         try {
             $controller->heartbeatSetPassword($storedToken, 'a-strong-password-1234');
@@ -193,7 +218,7 @@ final class PasswordControllerTest extends TestCase
 
         $service = $this->createMock(ApiUserServiceInterface::class);
 
-        $controller = new PasswordController($service, $settings);
+        $controller = new PasswordController($service, $settings, $this->createMock(TokenInvalidatorInterface::class));
 
         $result = $controller->heartbeatSetPassword($storedToken, 'a-strong-password-1234');
 

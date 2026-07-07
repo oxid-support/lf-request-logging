@@ -15,13 +15,17 @@ use OxidSupport\Heartbeat\Component\ApiUser\Exception\InvalidTokenException;
 use OxidSupport\Heartbeat\Component\ApiUser\Exception\PasswordTooShortException;
 use OxidSupport\Heartbeat\Component\ApiUser\Exception\SetPasswordFailedException;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\ApiUserServiceInterface;
+use OxidSupport\Heartbeat\Component\ApiUser\Service\TokenInvalidatorInterface;
+use TheCodingMachine\GraphQLite\Annotations\Logged;
 use TheCodingMachine\GraphQLite\Annotations\Mutation;
+use TheCodingMachine\GraphQLite\Annotations\Right;
 
 final class PasswordController
 {
     public function __construct(
         private ApiUserServiceInterface $apiUserService,
         private ModuleSettingServiceInterface $moduleSettingService,
+        private TokenInvalidatorInterface $tokenInvalidator,
     ) {
     }
 
@@ -57,6 +61,23 @@ final class PasswordController
         }
 
         return true;
+    }
+
+    /**
+     * Revoke all JWTs of the heartbeat-api service user (leak-response kill
+     * switch). Callable by the service user itself so OXID Support can revoke a
+     * leaked token remotely. It does not touch the password, and the service
+     * user cannot reset the password, so a stolen token cannot be used to
+     * re-establish access after this call.
+     *
+     * @return int number of tokens deleted
+     */
+    #[Mutation]
+    #[Logged]
+    #[Right('OXSHEARTBEAT_TOKEN_INVALIDATE')]
+    public function heartbeatInvalidateTokens(): int
+    {
+        return $this->tokenInvalidator->invalidateForApiUser();
     }
 
     private function validateToken(string $token): void

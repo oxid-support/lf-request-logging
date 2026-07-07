@@ -23,6 +23,7 @@ final class Module
     public const SUPPORTED_OPERATIONS = [
         'token',
         'heartbeatSetPassword',
+        'heartbeatInvalidateTokens',
         'requestLoggerSettings',
         'requestLoggerLogLevel',
         'requestLoggerLogLevelChange',
