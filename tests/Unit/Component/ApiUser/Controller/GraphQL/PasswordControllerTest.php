@@ -11,6 +11,8 @@ namespace OxidSupport\Heartbeat\Tests\Unit\Component\ApiUser\Controller\GraphQL;
 
 use OxidEsales\EshopCommunity\Internal\Framework\Module\Facade\ModuleSettingServiceInterface;
 use OxidSupport\Heartbeat\Component\ApiUser\Controller\GraphQL\PasswordController;
+use OxidSupport\Heartbeat\Component\ApiUser\Exception\InvalidTokenException;
+use OxidSupport\Heartbeat\Component\ApiUser\Exception\PasswordTooShortException;
 use OxidSupport\Heartbeat\Component\ApiUser\Exception\SetPasswordFailedException;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\ApiUserServiceInterface;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\TokenGeneratorInterface;
@@ -137,6 +139,46 @@ final class PasswordControllerTest extends TestCase
     }
 
     /**
+     * The mutation is reachable unauthenticated, so it must not reveal whether a
+     * setup is currently pending. "No token stored" and "wrong token" must yield
+     * the SAME generic error, closing the setup-status oracle that would help an
+     * attacker time a token brute force.
+     */
+    public function testSetPasswordGivesGenericErrorWhenNoTokenStored(): void
+    {
+        $settings = $this->createMock(ModuleSettingServiceInterface::class);
+        $settings->method('getString')->willReturn(new UnicodeString('')); // no setup token pending
+
+        $controller = new PasswordController(
+            $this->createMock(ApiUserServiceInterface::class),
+            $settings,
+            $this->createMock(TokenGeneratorInterface::class),
+            $this->createMock(TokenInvalidatorInterface::class),
+        );
+
+        $this->expectException(InvalidTokenException::class);
+        $controller->heartbeatSetPassword('any-token', 'a-strong-password-1234');
+    }
+
+    public function testSetPasswordRejectsPasswordShorterThanTwelve(): void
+    {
+        $storedToken = 'a-valid-setup-token-value';
+
+        $settings = $this->createMock(ModuleSettingServiceInterface::class);
+        $settings->method('getString')->willReturn(new UnicodeString($storedToken));
+
+        $controller = new PasswordController(
+            $this->createMock(ApiUserServiceInterface::class),
+            $settings,
+            $this->createMock(TokenGeneratorInterface::class),
+            $this->createMock(TokenInvalidatorInterface::class),
+        );
+
+        $this->expectException(PasswordTooShortException::class);
+        $controller->heartbeatSetPassword($storedToken, 'elevenchars'); // 11 chars
+    }
+
+    /**
      * OXS-3068: when setPasswordForApiUser fails after the token was cleared, the
      * token must be restored so the setup stays retryable, and a typed exception
      * must surface instead of leaving the service user locked out.
@@ -166,7 +208,7 @@ final class PasswordControllerTest extends TestCase
         );
 
         try {
-            $controller->heartbeatSetPassword($storedToken, 'password123');
+            $controller->heartbeatSetPassword($storedToken, 'a-strong-password-1234');
             $this->fail('Expected SetPasswordFailedException');
         } catch (SetPasswordFailedException $e) {
             $this->assertInstanceOf(\RuntimeException::class, $e->getPrevious());
@@ -202,7 +244,7 @@ final class PasswordControllerTest extends TestCase
             $this->createMock(TokenInvalidatorInterface::class),
         );
 
-        $result = $controller->heartbeatSetPassword($storedToken, 'password123');
+        $result = $controller->heartbeatSetPassword($storedToken, 'a-strong-password-1234');
 
         $this->assertTrue($result);
         $this->assertSame([''], $savedValues, 'token is cleared once and not restored on success');

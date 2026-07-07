@@ -8,3 +8,5 @@ var/
 <sCompileDir>/
 composer.phar
 composer-setup.php
+/tests/.phpunit.integration.cache/
+/tests/.phpunit.result.cache

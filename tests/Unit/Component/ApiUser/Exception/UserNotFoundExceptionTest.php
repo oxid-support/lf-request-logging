@@ -20,7 +20,7 @@ final class UserNotFoundExceptionTest extends TestCase
     {
         $exception = new UserNotFoundException();
 
-        $this->assertEquals('API user not found. Please run the module migrations first.', $exception->getMessage());
+        $this->assertEquals('API user not found.', $exception->getMessage());
     }
 
     public function testGetCategoryReturnsNotfound(): void

@@ -48,61 +48,30 @@ final class PermissionProviderTest extends TestCase
         $this->assertArrayHasKey('oxidadmin', $permissions);
     }
 
-    public function testApiUserGroupHasPasswordResetPermission(): void
+    public function testAdminGroupHasRecoveryPermissions(): void
     {
         $provider = new PermissionProvider();
         $permissions = $provider->getPermissions();
 
-        $this->assertContains('OXSHEARTBEAT_PASSWORD_RESET', $permissions['oxsheartbeat_api']);
-    }
-
-    public function testAdminGroupHasPasswordResetPermission(): void
-    {
-        $provider = new PermissionProvider();
-        $permissions = $provider->getPermissions();
-
-        $this->assertContains('OXSHEARTBEAT_PASSWORD_RESET', $permissions['oxidadmin']);
-    }
-
-    public function testApiUserGroupHasExpectedPermissions(): void
-    {
-        $provider = new PermissionProvider();
-        $permissions = $provider->getPermissions();
-
-        $this->assertCount(2, $permissions['oxsheartbeat_api']);
-        $this->assertContains('OXSHEARTBEAT_PASSWORD_RESET', $permissions['oxsheartbeat_api']);
-        $this->assertContains('OXSHEARTBEAT_TOKEN_INVALIDATE', $permissions['oxsheartbeat_api']);
-    }
-
-    public function testAdminGroupHasExpectedPermissions(): void
-    {
-        $provider = new PermissionProvider();
-        $permissions = $provider->getPermissions();
-
-        $this->assertCount(2, $permissions['oxidadmin']);
         $this->assertContains('OXSHEARTBEAT_PASSWORD_RESET', $permissions['oxidadmin']);
         $this->assertContains('OXSHEARTBEAT_TOKEN_INVALIDATE', $permissions['oxidadmin']);
     }
 
-    public function testBothGroupsHaveSamePermissions(): void
+    /**
+     * Password reset and token invalidation are leak-response recovery
+     * operations. The service account (oxsheartbeat_api) must NOT hold them:
+     * a leaked service JWT could otherwise call heartbeatResetPassword, obtain
+     * a fresh setup token from the response, and re-establish access, defeating
+     * the very token-invalidation control (OXS-3054/3059).
+     */
+    public function testApiUserGroupHasNoRecoveryPermissions(): void
     {
         $provider = new PermissionProvider();
         $permissions = $provider->getPermissions();
 
-        $apiPermissions = $permissions['oxsheartbeat_api'];
-        $adminPermissions = $permissions['oxidadmin'];
+        $apiGroup = $permissions['oxsheartbeat_api'] ?? [];
 
-        sort($apiPermissions);
-        sort($adminPermissions);
-
-        $this->assertSame($apiPermissions, $adminPermissions);
-    }
-
-    public function testGetPermissionsReturnsOnlyTwoGroups(): void
-    {
-        $provider = new PermissionProvider();
-        $permissions = $provider->getPermissions();
-
-        $this->assertCount(2, $permissions);
+        $this->assertNotContains('OXSHEARTBEAT_PASSWORD_RESET', $apiGroup);
+        $this->assertNotContains('OXSHEARTBEAT_TOKEN_INVALIDATE', $apiGroup);
     }
 }

@@ -50,11 +50,17 @@ class LoggerFactory
             ),
             $this->mapLogLevelToMonologLevel(
                 $this->moduleSettingFacade->getLogLevel()
-            )
+            ),
+            true,
+            // Logs contain session ids, usernames, IPs and request data; never
+            // world-readable. 0640 = owner rw, group r, others none.
+            0640
         );
 
         $handler->setFormatter(
-            new LineFormatter(null, null, true, true)
+            // allowInlineLineBreaks=false: an injected newline in logged data
+            // must not become a separate, forged log record (log injection).
+            new LineFormatter(null, null, false, true)
         );
 
         $logger = new Logger(Module::ID);
@@ -132,12 +138,13 @@ class LoggerFactory
         }
 
         // Try to create; if it fails, check again to be safe against race conditions.
-        if (!mkdir($dir, 0775, true) && !is_dir($dir)) {
+        // 0750: owner rwx, group rx, others none (logs must not be world-accessible).
+        if (!mkdir($dir, 0750, true) && !is_dir($dir)) {
             // Emit an error rather than suppressing; avoids failing silently.
             // Using error_log keeps this method independent of $this->logger configuration order.
 
             $errorMessage = sprintf(
-                'Module %s: Failed to create log directory: %s, due to missing permissions (0775).',
+                'Module %s: Failed to create log directory: %s, due to missing permissions (0750).',
                 Module::ID,
                 $dir
             );

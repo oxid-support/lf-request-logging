@@ -81,6 +81,24 @@ final class DiagnosticsControllerTest extends TestCase
         $this->assertContains('TheCodingMachine\GraphQLite\Annotations\Right', $attributeNames);
     }
 
+    public function testDiagnosticsUsesDedicatedDiagnosticsRight(): void
+    {
+        // Diagnostics must be gated by its own right, not the LogSender one,
+        // so "read diagnostics" and "read logs" are separable privileges.
+        $reflection = new ReflectionClass(DiagnosticsController::class);
+        $method = $reflection->getMethod('diagnostics');
+
+        $rightArgs = [];
+        foreach ($method->getAttributes() as $attr) {
+            if ($attr->getName() === 'TheCodingMachine\GraphQLite\Annotations\Right') {
+                $rightArgs = array_merge($rightArgs, $attr->getArguments());
+            }
+        }
+
+        $this->assertContains('DIAGNOSTICS_VIEW', $rightArgs);
+        $this->assertNotContains('LOG_SENDER_VIEW', $rightArgs);
+    }
+
     public function testDiagnosticsHasNoParameters(): void
     {
         $reflection = new ReflectionClass(DiagnosticsController::class);
