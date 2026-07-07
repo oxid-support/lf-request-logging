@@ -31,9 +31,9 @@ use PHPUnit\Framework\TestCase;
  * Why no graphql-base TokenTestCase here (unlike the 7.x lines): graphql-base v7
  * ships its test base for the phpunit-8.5 era and it does not load cleanly in
  * the installed 6.5 shop. The OXID 6.5 platform dictates phpunit 8.5, so this
- * harness uses a plain TestCase. The GraphQL mutation path (heartbeatInvalidateTokens)
- * is verified functionally over HTTP separately; here the same invalidation is
- * asserted through the TokenInvalidator service the mutation delegates to.
+ * harness uses a plain TestCase. Token invalidation is a shop-admin action
+ * (admin UI button / password reset / module deactivation); it is asserted here
+ * through the TokenInvalidator service those paths use.
  *
  * Non-destructive: there is no DBAL transaction wrapping because the reset/edit
  * paths write through OXID's legacy DB layer (outside a DBAL transaction). Instead
@@ -127,10 +127,9 @@ final class TokenInvalidationTest extends TestCase
     public function testSetupControllerInvalidateActionDropsApiUserTokens(): void
     {
         /**
-         * Admin-button action path (OXS-3058). The button delegates to the same
-         * TokenInvalidator the GraphQL mutation uses, but the controller path
-         * itself is exercised here so the admin entry point cannot silently
-         * break without the mutation breaking too.
+         * Admin-button action path (OXS-3058). The button delegates to the
+         * TokenInvalidator service; the controller path itself is exercised
+         * here so the admin entry point cannot silently break.
          */
         $baseline = $this->apiUserTokenCount();
         $this->seedApiUserToken();
