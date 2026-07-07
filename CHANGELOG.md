@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New admin button "Terminate API Sessions" in the API user setup UI.
 - New GraphQL mutation `heartbeatInvalidateTokens` terminates sessions without resetting the password.
 - Edits to the service user in the OXID admin area (password, login email, active flag) terminate the sessions too.
+- Integration tests no longer assume an empty `oegraphqltoken` baseline; they are stable on shops with existing API-user tokens.
+
+### Added
+- Integration tests guarding the dashboard contract: `SchemaContractTest` pins `Module::SUPPORTED_OPERATIONS` to the actually built GraphQL schema (both directions), `HttpAuthorizationTest` verifies Bearer-token authentication over real HTTP and fails loudly when the web server drops the Authorization header (Apache `mod_proxy_fcgi` without `CGIPassAuth On`).
 
 ### Removed
 - GraphQL mutation `requestLoggerRedactChange`. The redact field list (values that are always redacted from request logs, even when "redact all values" is disabled) can now only be changed by the shop admin via the module's admin settings page. The read query `requestLoggerRedact` is unaffected. Removed with it: `SettingServiceInterface::setRedactItems()` and the internal exception class `InvalidCollectionException` (PHP-level BC break for code extending the remote setting service).

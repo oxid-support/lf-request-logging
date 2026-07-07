@@ -83,19 +83,21 @@ final class TokenInvalidationTest extends TestCase
 
     public function testInvalidatorServiceDropsApiUserTokens(): void
     {
+        $baseline = $this->apiUserTokenCount();
         $this->seedApiUserToken();
-        $this->assertSame(1, $this->apiUserTokenCount());
+        $this->assertSame($baseline + 1, $this->apiUserTokenCount());
 
         $deleted = $this->invalidator()->invalidateForApiUser();
 
-        $this->assertSame(1, $deleted);
+        $this->assertSame($baseline + 1, $deleted);
         $this->assertSame(0, $this->apiUserTokenCount());
     }
 
     public function testResetPasswordDropsApiUserTokens(): void
     {
+        $baseline = $this->apiUserTokenCount();
         $this->seedApiUserToken();
-        $this->assertSame(1, $this->apiUserTokenCount());
+        $this->assertSame($baseline + 1, $this->apiUserTokenCount());
 
         $this->apiUserService()->resetPasswordForApiUser();
 
@@ -104,8 +106,9 @@ final class TokenInvalidationTest extends TestCase
 
     public function testModuleDeactivationDropsApiUserTokens(): void
     {
+        $baseline = $this->apiUserTokenCount();
         $this->seedApiUserToken();
-        $this->assertSame(1, $this->apiUserTokenCount());
+        $this->assertSame($baseline + 1, $this->apiUserTokenCount());
 
         ModuleEvents::onDeactivate();
 
@@ -129,8 +132,9 @@ final class TokenInvalidationTest extends TestCase
          * itself is exercised here so the admin entry point cannot silently
          * break without the mutation breaking too.
          */
+        $baseline = $this->apiUserTokenCount();
         $this->seedApiUserToken();
-        $this->assertSame(1, $this->apiUserTokenCount());
+        $this->assertSame($baseline + 1, $this->apiUserTokenCount());
 
         $controller = oxNew(SetupController::class);
         $controller->invalidateTokens();
@@ -140,8 +144,9 @@ final class TokenInvalidationTest extends TestCase
 
     public function testServiceUserEditDropsApiUserTokens(): void
     {
+        $baseline = $this->apiUserTokenCount();
         $this->seedApiUserToken();
-        $this->assertSame(1, $this->apiUserTokenCount());
+        $this->assertSame($baseline + 1, $this->apiUserTokenCount());
 
         $user = oxNew(User::class);
         $user->load($this->apiUserId);
