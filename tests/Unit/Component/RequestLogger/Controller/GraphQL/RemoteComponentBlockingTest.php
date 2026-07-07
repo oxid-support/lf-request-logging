@@ -81,14 +81,6 @@ final class RemoteComponentBlockingTest extends TestCase
         $controller->requestLoggerLogAdminChange(true);
     }
 
-    public function testSettingControllerRedactChangeBlocksWhenDisabled(): void
-    {
-        $controller = $this->createSettingControllerWithDisabledComponent();
-
-        $this->expectException(RemoteComponentDisabledException::class);
-        $controller->requestLoggerRedactChange('["password"]');
-    }
-
     public function testSettingControllerRedactAllValuesChangeBlocksWhenDisabled(): void
     {
         $controller = $this->createSettingControllerWithDisabledComponent();

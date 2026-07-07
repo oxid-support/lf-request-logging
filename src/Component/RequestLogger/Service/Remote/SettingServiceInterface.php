@@ -27,8 +27,6 @@ interface SettingServiceInterface
 
     public function getRedactItems(): string;
 
-    public function setRedactItems(string $jsonValue): string;
-
     public function isRedactAllValuesEnabled(): bool;
 
     public function setRedactAllValuesEnabled(bool $value): bool;

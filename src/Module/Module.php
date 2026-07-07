@@ -33,7 +33,6 @@ final class Module
         'requestLoggerLogAdmin',
         'requestLoggerLogAdminChange',
         'requestLoggerRedact',
-        'requestLoggerRedactChange',
         'requestLoggerRedactAllValues',
         'requestLoggerRedactAllValuesChange',
         'logSenderSources',

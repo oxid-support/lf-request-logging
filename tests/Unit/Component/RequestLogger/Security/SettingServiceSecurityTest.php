@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace OxidSupport\Heartbeat\Tests\Unit\Component\RequestLogger\Security;
 
 use OxidEsales\EshopCommunity\Internal\Framework\Module\Configuration\Bridge\ModuleSettingBridgeInterface;
-use OxidSupport\Heartbeat\Component\RequestLogger\Exception\InvalidCollectionException;
 use OxidSupport\Heartbeat\Component\RequestLogger\Service\Remote\SettingService;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -27,97 +26,9 @@ class SettingServiceSecurityTest extends TestCase
         $this->service = new SettingService($this->moduleSettingService);
     }
 
-    // ===========================================
-    // JSON INJECTION TESTS
-    // ===========================================
-
-    public function testInvalidJsonIsRejected(): void
-    {
-        $this->expectException(InvalidCollectionException::class);
-        $this->service->setRedactItems('not valid json');
-    }
-
-    public function testJsonStringInsteadOfArrayIsRejected(): void
-    {
-        $this->expectException(InvalidCollectionException::class);
-        $this->service->setRedactItems('"just a string"');
-    }
-
-    public function testJsonNumberInsteadOfArrayIsRejected(): void
-    {
-        $this->expectException(InvalidCollectionException::class);
-        $this->service->setRedactItems('12345');
-    }
-
-    public function testJsonNullIsRejected(): void
-    {
-        $this->expectException(InvalidCollectionException::class);
-        $this->service->setRedactItems('null');
-    }
-
-    public function testJsonBooleanIsRejected(): void
-    {
-        $this->expectException(InvalidCollectionException::class);
-        $this->service->setRedactItems('true');
-    }
-
-    public function testValidJsonArrayIsAccepted(): void
-    {
-        $jsonValue = '["password", "token"]';
-
-        $this->moduleSettingService
-            ->expects($this->once())
-            ->method('save');
-
-        $result = $this->service->setRedactItems($jsonValue);
-        $this->assertSame($jsonValue, $result);
-    }
-
-    public function testEmptyJsonArrayIsAccepted(): void
-    {
-        $this->moduleSettingService
-            ->expects($this->once())
-            ->method('save');
-
-        $result = $this->service->setRedactItems('[]');
-        $this->assertEquals('[]', $result);
-    }
-
-    /**
-     * @dataProvider maliciousJsonProvider
-     */
-    #[DataProvider('maliciousJsonProvider')]
-    public function testMaliciousJsonInputs(string $maliciousJson, bool $shouldReject): void
-    {
-        if ($shouldReject) {
-            $this->expectException(InvalidCollectionException::class);
-            $this->service->setRedactItems($maliciousJson);
-        } else {
-            // If it's valid JSON array, it should be accepted
-            // The data itself is just stored, not executed
-            $this->moduleSettingService
-                ->expects($this->once())
-                ->method('save');
-
-            $result = $this->service->setRedactItems($maliciousJson);
-            $this->assertIsString($result);
-        }
-    }
-
-    public static function maliciousJsonProvider(): array
-    {
-        return [
-            'xss_in_array' => ['["<script>alert(1)</script>"]', false], // Stored, not executed
-            'sql_in_array' => ['["\'OR 1=1--"]', false], // Stored, not executed
-            'deeply_nested' => ['[[[[[[[[[[]]]]]]]]]]', false], // Valid array
-            'object_not_array' => ['{"key": "value"}', true], // Object rejected
-            'mixed_types' => ['["string", 123, true, null]', false], // Valid array
-            'unicode_escape' => ['["\\u003cscript\\u003e"]', false], // Unicode is fine
-            'empty_key_object' => ['{"": "value"}', true], // Object rejected
-            'prototype_pollution' => ['{"__proto__": {"admin": true}}', true], // Object rejected
-            'constructor_pollution' => ['{"constructor": {"prototype": {}}}', true], // Object rejected
-        ];
-    }
+    // Note: setRedactItems and its JSON validation were removed from the remote
+    // SettingService on purpose. The redact field list is shop admin only and is
+    // written exclusively via the admin settings form (SettingsController::save()).
 
     // ===========================================
     // LOG LEVEL INJECTION TESTS

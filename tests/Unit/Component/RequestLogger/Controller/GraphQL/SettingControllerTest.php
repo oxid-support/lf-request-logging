@@ -144,22 +144,6 @@ final class SettingControllerTest extends TestCase
         $this->assertFalse($result);
     }
 
-    public function testRequestLoggerRedactChangeCallsServiceAndReturnsResult(): void
-    {
-        $jsonValue = '["password","token"]';
-
-        $settingService = $this->createMock(SettingServiceInterface::class);
-        $settingService
-            ->expects($this->once())
-            ->method('setRedactItems')
-            ->with($jsonValue)
-            ->willReturn($jsonValue);
-
-        $result = $this->getSut(settingService: $settingService)->requestLoggerRedactChange($jsonValue);
-
-        $this->assertSame($jsonValue, $result);
-    }
-
     public function testRequestLoggerRedactAllValuesChangeCallsServiceAndReturnsResult(): void
     {
         $settingService = $this->createMock(SettingServiceInterface::class);
