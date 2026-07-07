@@ -126,6 +126,10 @@ services:
     OxidSupport\Heartbeat\Component\ApiUser\Framework\NamespaceMapper:
         tags: ['graphql_namespace_mapper']
 
+    OxidSupport\Heartbeat\Component\ApiUser\Framework\PermissionProvider:
+        public: true
+        tags: ['graphql_permission_provider']
+
     # ==========================================================================
     # Component: RequestLogger - Remote Services
     # ==========================================================================

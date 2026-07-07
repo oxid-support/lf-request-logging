@@ -15,19 +15,25 @@ use OxidSupport\Heartbeat\Component\ApiUser\Exception\InvalidTokenException;
 use OxidSupport\Heartbeat\Component\ApiUser\Exception\PasswordTooShortException;
 use OxidSupport\Heartbeat\Component\ApiUser\Exception\SetPasswordFailedException;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\ApiUserServiceInterface;
+use OxidSupport\Heartbeat\Component\ApiUser\Service\TokenInvalidatorInterface;
+use TheCodingMachine\GraphQLite\Annotations\Logged;
 use TheCodingMachine\GraphQLite\Annotations\Mutation;
+use TheCodingMachine\GraphQLite\Annotations\Right;
 
 final class PasswordController
 {
     private ApiUserServiceInterface $apiUserService;
     private ModuleSettingBridgeInterface $moduleSettingService;
+    private TokenInvalidatorInterface $tokenInvalidator;
 
     public function __construct(
         ApiUserServiceInterface $apiUserService,
-        ModuleSettingBridgeInterface $moduleSettingService
+        ModuleSettingBridgeInterface $moduleSettingService,
+        TokenInvalidatorInterface $tokenInvalidator
     ) {
         $this->apiUserService = $apiUserService;
         $this->moduleSettingService = $moduleSettingService;
+        $this->tokenInvalidator = $tokenInvalidator;
     }
 
     /**
@@ -63,6 +69,24 @@ final class PasswordController
         }
 
         return true;
+    }
+
+    /**
+     * Revoke all JWTs of the heartbeat-api service user (leak-response kill
+     * switch). Callable by the service user itself so OXID Support can revoke a
+     * leaked token remotely. It does not touch the password, and the service
+     * user cannot reset the password, so a stolen token cannot be used to
+     * re-establish access after this call.
+     *
+     * @Mutation
+     * @Logged
+     * @Right(name="OXSHEARTBEAT_TOKEN_INVALIDATE")
+     *
+     * @return int number of tokens deleted
+     */
+    public function heartbeatInvalidateTokens(): int
+    {
+        return $this->tokenInvalidator->invalidateForApiUser();
     }
 
     private function validateToken(string $token): void
