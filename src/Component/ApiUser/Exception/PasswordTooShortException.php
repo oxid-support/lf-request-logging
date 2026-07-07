@@ -15,7 +15,7 @@ final class PasswordTooShortException extends Error
 {
     public function __construct()
     {
-        parent::__construct('Password must be at least 8 characters long.');
+        parent::__construct('Password must be at least 12 characters long.');
     }
 
     public function getCategory(): string

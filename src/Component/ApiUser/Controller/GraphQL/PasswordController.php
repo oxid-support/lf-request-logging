@@ -14,7 +14,6 @@ use OxidSupport\Heartbeat\Module\Module;
 use OxidSupport\Heartbeat\Component\ApiUser\Exception\InvalidTokenException;
 use OxidSupport\Heartbeat\Component\ApiUser\Exception\PasswordTooShortException;
 use OxidSupport\Heartbeat\Component\ApiUser\Exception\SetPasswordFailedException;
-use OxidSupport\Heartbeat\Component\ApiUser\Exception\SetupNotAvailableException;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\ApiUserServiceInterface;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\TokenGeneratorInterface;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\TokenInvalidatorInterface;
@@ -49,7 +48,10 @@ final class PasswordController
      */
     public function heartbeatSetPassword(string $token, string $password): bool
     {
-        $this->assertSetupAvailable();
+        // No separate "setup available" check: validateToken already throws the
+        // generic InvalidTokenException for both an empty stored token and a
+        // wrong token, so an unauthenticated caller cannot tell whether a setup
+        // is pending (closes the setup-status oracle).
         $this->validateToken($token);
         $this->validatePassword($password);
 
@@ -111,25 +113,6 @@ final class PasswordController
         return $this->tokenInvalidator->invalidateForApiUser();
     }
 
-    /**
-     * Assert that setup is available (token exists).
-     */
-    private function assertSetupAvailable(): void
-    {
-        try {
-            $storedToken = (string) $this->moduleSettingService->get(
-                Module::SETTING_APIUSER_SETUP_TOKEN,
-                Module::ID
-            );
-        } catch (\Throwable $e) {
-            throw new SetupNotAvailableException();
-        }
-
-        if (empty($storedToken)) {
-            throw new SetupNotAvailableException();
-        }
-    }
-
     private function validateToken(string $token): void
     {
         try {
@@ -149,7 +132,8 @@ final class PasswordController
 
     private function validatePassword(string $password): void
     {
-        if (strlen($password) < 8) {
+        // 12 char minimum for a service account with full API access.
+        if (strlen($password) < 12) {
             throw new PasswordTooShortException();
         }
     }

@@ -23,6 +23,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - `heartbeatSetPassword` restores the setup token when the password update fails, keeping setup retryable instead of locking out the service user.
 
+### Security
+- Setup token now uses a CSPRNG (`random_bytes`) instead of `md5(uniqid())`, closing a predictable-token path to taking over the API user via the unauthenticated `heartbeatSetPassword`.
+- Password reset and token invalidation rights removed from the `oxsheartbeat_api` group (admin only), so a leaked service-user JWT can no longer reset its own password and re-establish access after token invalidation.
+- Sensitive-data redaction now recurses into nested arrays/objects, so a blocklisted key (e.g. `password`) nested in a request body is no longer logged in clear.
+- Query parameters in the logged `uri` and `referer` are redacted in blocklist mode too, not only in redact-all mode; the session id is pseudonymized instead of logged raw.
+- Log injection hardened: the log formatter no longer allows inline line breaks, and a client-supplied correlation id is validated (and regenerated if malformed) before it reaches the log.
+- `logSenderContent` clamps the caller-supplied `maxBytes` to the configured maximum, preventing both a limit bypass and unbounded memory use.
+- Request log files are created with 0640 permissions and their directory with 0750, instead of world-readable defaults.
+- Diagnostics is gated by a dedicated `DIAGNOSTICS_VIEW` right instead of reusing `LOG_SENDER_VIEW`, allowing separate granting of log and diagnostics access.
+- `heartbeatSetPassword` returns the same generic error whether or not a setup is pending (closes a setup-status oracle), the service-user password minimum is raised to 12 characters, and internal deployment details are removed from client-facing error messages.
+
 ## [1.0.2] - 2026-06-02
 
 ### Changed

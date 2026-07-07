@@ -89,13 +89,16 @@ class ShopControl extends CoreShopControl
         $host   = $_SERVER['HTTP_HOST'] ?? '';
         $uri    = $_SERVER['REQUEST_URI'] ?? '/';
 
-        // Redact query parameters in referer and URI only if redact-all-values is enabled
-        if ($redactAll) {
-            $referer = $this->redactUrlQueryParams($referer);
-            $uri = $this->redactUrlQueryParams(sprintf("%s://%s%s", $scheme, $host, $uri));
-        } else {
-            $uri = sprintf("%s://%s%s", $scheme, $host, $uri);
-        }
+        // Redact query parameters in referer and URI in BOTH modes. In blocklist
+        // mode only blocklisted keys are redacted; this closes the leak where a
+        // blocklisted value (e.g. ?token=SECRET) was still logged raw in the URI.
+        $blocklistLower = array_map('strtolower', $settingsFacade->getRedactItems());
+        $uri = $this->redactUrlQueryParams(
+            sprintf("%s://%s%s", $scheme, $host, $uri),
+            $redactAll,
+            $blocklistLower
+        );
+        $referer = $this->redactUrlQueryParams($referer, $redactAll, $blocklistLower);
 
         $recorder->logStart([
 
@@ -112,7 +115,7 @@ class ShopControl extends CoreShopControl
             'userAgent'  => $redactAll ? '[redacted]' : $userAgent,
             'lang'       => $facade->getLanguageAbbreviation(),
 
-            'sessionId'  => $redactAll ? '[redacted]' : $facade->getSessionId(),
+            'sessionId'  => $redactAll ? '[redacted]' : $this->pseudonymizeSessionId($facade->getSessionId()),
             'userId'     => $redactAll ? '[redacted]' : $facade->getUserId(),
             'username'   => $redactAll ? '[redacted]' : $facade->getUsername(),
             'ip'         => $redactAll ? '[redacted]' : ($_SERVER['REMOTE_ADDR'] ?? null),
@@ -142,7 +145,47 @@ class ShopControl extends CoreShopControl
         ]);
     }
 
-    private function redactUrlQueryParams(?string $url): ?string
+    /**
+     * Return a stable pseudonym of the session id instead of the raw value.
+     * The raw session id is a live authentication token; logging it enables
+     * session hijacking if logs are readable. The pseudonym keeps request
+     * correlation intact for support without exposing the token.
+     */
+    private function pseudonymizeSessionId(?string $sessionId): ?string
+    {
+        if ($sessionId === null || $sessionId === '') {
+            return $sessionId;
+        }
+
+        return 'sha256:' . substr(hash('sha256', $sessionId), 0, 16);
+    }
+
+    /**
+     * redact-all mode: redact every query value except the harmless routing
+     * params. blocklist mode: redact only keys on the blocklist. Either way the
+     * query string of uri/referer is covered, so a blocklisted value can no
+     * longer leak through the raw URL.
+     *
+     * @param string[] $excludeFromRedaction
+     * @param string[] $blocklistLower lowercase blocklist entries
+     */
+    private function shouldRedactQueryKey(
+        string $key,
+        bool $redactAll,
+        array $excludeFromRedaction,
+        array $blocklistLower
+    ): bool {
+        if ($redactAll) {
+            return !in_array($key, $excludeFromRedaction, true);
+        }
+
+        return in_array(strtolower($key), $blocklistLower, true);
+    }
+
+    /**
+     * @param string[] $blocklistLower lowercase blocklist entries (blocklist mode only)
+     */
+    private function redactUrlQueryParams(?string $url, bool $redactAll, array $blocklistLower): ?string
     {
         if ($url === null) {
             return null;
@@ -163,13 +206,12 @@ class ShopControl extends CoreShopControl
         foreach ($queryParams as $key => $value) {
             $encodedKey = urlencode((string) $key);
 
-            // Don't redact cl and fnc parameters
-            if (in_array((string) $key, $excludeFromRedaction, true)) {
-                $encodedValue = urlencode(is_array($value) ? '' : (string) $value);
-                $queryParts[] = $encodedKey . '=' . $encodedValue;
-            } else {
+            if ($this->shouldRedactQueryKey((string) $key, $redactAll, $excludeFromRedaction, $blocklistLower)) {
                 // Use literal [redacted] without URL encoding
                 $queryParts[] = $encodedKey . '=[redacted]';
+            } else {
+                $encodedValue = urlencode(is_array($value) ? '' : (string) $value);
+                $queryParts[] = $encodedKey . '=' . $encodedValue;
             }
         }
 

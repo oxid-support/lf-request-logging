@@ -34,7 +34,7 @@ final class DiagnosticsController
      *
      * @Query
      * @Logged
-     * @Right(name="LOG_SENDER_VIEW")
+     * @Right(name="DIAGNOSTICS_VIEW")
      */
     public function diagnostics(): ?DiagnosticsType
     {

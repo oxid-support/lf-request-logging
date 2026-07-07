@@ -47,20 +47,34 @@ final class PermissionProviderTest extends TestCase
         $this->assertArrayHasKey('oxidadmin', $permissions);
     }
 
-    public function testApiUserGroupHasLogSenderViewPermission(): void
+    public function testApiUserGroupHasDiagnosticsViewPermission(): void
     {
         $provider = new PermissionProvider();
         $permissions = $provider->getPermissions();
 
-        $this->assertContains('LOG_SENDER_VIEW', $permissions['oxsheartbeat_api']);
+        $this->assertContains('DIAGNOSTICS_VIEW', $permissions['oxsheartbeat_api']);
     }
 
-    public function testAdminGroupHasLogSenderViewPermission(): void
+    public function testAdminGroupHasDiagnosticsViewPermission(): void
     {
         $provider = new PermissionProvider();
         $permissions = $provider->getPermissions();
 
-        $this->assertContains('LOG_SENDER_VIEW', $permissions['oxidadmin']);
+        $this->assertContains('DIAGNOSTICS_VIEW', $permissions['oxidadmin']);
+    }
+
+    /**
+     * Diagnostics must own a dedicated right, not reuse the LogSender one.
+     * Otherwise "read diagnostics" and "read logs" cannot be granted
+     * independently (no separation of privilege).
+     */
+    public function testDoesNotReuseLogSenderRight(): void
+    {
+        $provider = new PermissionProvider();
+        $permissions = $provider->getPermissions();
+
+        $this->assertNotContains('LOG_SENDER_VIEW', $permissions['oxsheartbeat_api']);
+        $this->assertNotContains('LOG_SENDER_VIEW', $permissions['oxidadmin']);
     }
 
     public function testApiUserGroupHasExactlyOnePermission(): void

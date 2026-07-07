@@ -202,8 +202,12 @@ final class LogControllerTest extends TestCase
         $logPath = new LogPath($filePath, LogPathType::FILE(), 'Test Log');
         $source = $this->createSourceWithPaths('test_source', 'Test', [$logPath], true);
 
+        // Configured ceiling well above the requested 5000 so it passes through.
         $this->mockSettings->method('get')
-            ->willReturn(['test_source']);
+            ->willReturnMap([
+                [Module::SETTING_LOGSENDER_ENABLED_SOURCES, Module::ID, ['test_source']],
+                [Module::SETTING_LOGSENDER_MAX_BYTES, Module::ID, 1048576],
+            ]);
 
         $this->mockCollector->method('getSourceById')
             ->willReturn($source);
@@ -217,6 +221,35 @@ final class LogControllerTest extends TestCase
             ->willReturn(['size' => 100, 'modified' => time()]);
 
         $this->sut->logSenderContent('test_source', 5000);
+    }
+
+    public function testLogSenderContentClampsMaxBytesToConfiguredCeiling(): void
+    {
+        // A caller must not exceed the admin-configured max bytes. An
+        // unclamped huge value both bypasses that limit and loads the whole
+        // file into memory (DoS). The controller clamps down to the ceiling.
+        $filePath = $this->createTempFile('test.log', 'content');
+        $logPath = new LogPath($filePath, LogPathType::FILE(), 'Test Log');
+        $source = $this->createSourceWithPaths('test_source', 'Test', [$logPath], true);
+
+        $this->mockSettings->method('get')
+            ->willReturnMap([
+                [Module::SETTING_LOGSENDER_ENABLED_SOURCES, Module::ID, ['test_source']],
+                [Module::SETTING_LOGSENDER_MAX_BYTES, Module::ID, 1000],
+            ]);
+
+        $this->mockCollector->method('getSourceById')
+            ->willReturn($source);
+
+        $this->mockReader->expects($this->once())
+            ->method('readFile')
+            ->with($filePath, 1000) // clamped down from PHP_INT_MAX
+            ->willReturn('content');
+
+        $this->mockReader->method('getFileInfo')
+            ->willReturn(['size' => 100, 'modified' => time()]);
+
+        $this->sut->logSenderContent('test_source', PHP_INT_MAX);
     }
 
     public function testLogSenderContentDetectsTruncatedContent(): void

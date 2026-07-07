@@ -72,6 +72,17 @@ final class DiagnosticsControllerTest extends TestCase
         $this->assertStringContainsString('@Right', $method->getDocComment());
     }
 
+    public function testDiagnosticsUsesDedicatedDiagnosticsRight(): void
+    {
+        // Diagnostics must be gated by its own right, not the LogSender one,
+        // so "read diagnostics" and "read logs" are separable privileges.
+        $method = (new ReflectionClass(DiagnosticsController::class))->getMethod('diagnostics');
+        $doc = (string) $method->getDocComment();
+
+        $this->assertStringContainsString('DIAGNOSTICS_VIEW', $doc);
+        $this->assertStringNotContainsString('LOG_SENDER_VIEW', $doc);
+    }
+
     public function testDiagnosticsHasNoParameters(): void
     {
         $reflection = new ReflectionClass(DiagnosticsController::class);

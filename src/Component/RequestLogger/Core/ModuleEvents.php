@@ -14,6 +14,7 @@ use OxidEsales\Eshop\Core\Registry;
 use OxidEsales\EshopCommunity\Internal\Container\ContainerFactory;
 use OxidEsales\EshopCommunity\Internal\Framework\Database\QueryBuilderFactoryInterface;
 use OxidEsales\EshopCommunity\Internal\Framework\Module\Configuration\Bridge\ModuleSettingBridgeInterface;
+use OxidSupport\Heartbeat\Component\ApiUser\Service\TokenGeneratorInterface;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\TokenInvalidatorInterface;
 use OxidSupport\Heartbeat\Module\Module;
 use Symfony\Component\Console\Output\BufferedOutput;
@@ -51,7 +52,10 @@ final class ModuleEvents
             return;
         }
 
-        $token = Registry::getUtilsObject()->generateUId();
+        // Use the shared CSPRNG-backed generator, not OXID's md5(uniqid())
+        // generateUId(): this token is the only gate on the unauthenticated
+        // heartbeatSetPassword mutation.
+        $token = $container->get(TokenGeneratorInterface::class)->generate();
         $moduleSettingService->save(Module::SETTING_APIUSER_SETUP_TOKEN, $token, Module::ID);
     }
 
