@@ -73,15 +73,46 @@ class SensitiveDataRedactor implements SensitiveDataRedactorInterface
                 continue;
             }
 
-            // Arrays/objects fully as JSON (no limits, nothing truncated)
+            // Arrays/objects fully as JSON (no limits, nothing truncated).
+            // Recurse first so a blocklisted key nested at any depth is redacted
+            // instead of leaking in the wholesale JSON encoding.
             if (is_array($v) || is_object($v)) {
-                $json = json_encode($v, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                $redacted = $this->redactNested((array) $v, $blocklistLower);
+                $json = json_encode($redacted, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
                 $out[$key] = $json !== false ? $json : '[unserializable]';
                 continue;
             }
 
             // Strings/Scalars/NULL: unchanged
             $out[$key] = $v;
+        }
+
+        return $out;
+    }
+
+    /**
+     * Recursively redact blocklisted keys at every depth.
+     *
+     * @param array<array-key, mixed> $values
+     * @param string[] $blocklistLower lowercase blocklist entries
+     * @return array<array-key, mixed>
+     */
+    private function redactNested(array $values, array $blocklistLower): array
+    {
+        $out = [];
+
+        foreach ($values as $k => $v) {
+            if (is_string($k) && in_array(strtolower($k), $blocklistLower, true)) {
+                $out[$k] = '[redacted]';
+                continue;
+            }
+
+            if (is_array($v) || is_object($v)) {
+                $out[$k] = $this->redactNested((array) $v, $blocklistLower);
+                continue;
+            }
+
+            $out[$k] = $v;
         }
 
         return $out;

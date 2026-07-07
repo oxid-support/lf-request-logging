@@ -63,6 +63,53 @@ class CorrelationIdProviderTest extends TestCase
         $this->assertSame('resolved-id-123', $result);
     }
 
+    /**
+     * A correlation id resolved from a client cookie/header is attacker
+     * controlled. PHP URL-decodes cookies, so it can contain newlines/control
+     * chars, which would let an attacker forge log lines. The provider must
+     * reject anything that is not a safe token and generate a fresh id instead.
+     *
+     * @dataProvider maliciousCorrelationIdProvider
+     */
+    public function testProvideRejectsMalformedResolvedId(string $malicious): void
+    {
+        $this->resolver
+            ->expects($this->once())
+            ->method('resolve')
+            ->willReturn($malicious);
+
+        $this->generator
+            ->expects($this->once())
+            ->method('generate')
+            ->willReturn('generated-safe-id');
+
+        $this->emitter
+            ->expects($this->once())
+            ->method('emit')
+            ->with('generated-safe-id');
+
+        $provider = new CorrelationIdProvider(
+            $this->emitter,
+            $this->generator,
+            $this->resolver
+        );
+
+        $this->assertSame('generated-safe-id', $provider->provide());
+    }
+
+    public static function maliciousCorrelationIdProvider(): array
+    {
+        return [
+            'newline injection' => ["abc\n2026-01-01 00:00:00 FAKE LOG LINE"],
+            'carriage return' => ["abc\r\ninjected"],
+            'null byte' => ["abc\0def"],
+            'spaces' => ['has spaces'],
+            'too long' => [str_repeat('a', 65)],
+            'empty' => [''],
+            'special chars' => ['<script>alert(1)</script>'],
+        ];
+    }
+
     public function testProvideGeneratesIdWhenResolverReturnsNull(): void
     {
         $this->resolver

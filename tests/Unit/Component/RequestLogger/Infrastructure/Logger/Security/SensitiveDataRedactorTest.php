@@ -195,6 +195,34 @@ class SensitiveDataRedactorTest extends TestCase
         $this->assertSame('john@example.com', $result['email']);
     }
 
+    public function testBlocklistMode_RedactsNestedBlocklistedKeys(): void
+    {
+        // A blocklisted key nested inside an array/object must be redacted too.
+        // Otherwise POST bodies like credentials[password]=x leak the secret in
+        // full because the array is JSON-encoded wholesale.
+        $this->moduleSettingFacade
+            ->method('isRedactAllValuesEnabled')
+            ->willReturn(false);
+        $this->moduleSettingFacade
+            ->method('getRedactItems')
+            ->willReturn(['password']);
+
+        $input = [
+            'credentials' => [
+                'user' => 'john',
+                'password' => 'secret123',
+                'deep' => ['PassWord' => 'nested-secret'],
+            ],
+        ];
+
+        $result = $this->redactor->redact($input);
+
+        $decoded = json_decode($result['credentials'], true);
+        $this->assertSame('john', $decoded['user']);
+        $this->assertSame('[redacted]', $decoded['password']);
+        $this->assertSame('[redacted]', $decoded['deep']['PassWord']);
+    }
+
     public function testBlocklistMode_IsCaseInsensitiveForKeys(): void
     {
         $this->moduleSettingFacade

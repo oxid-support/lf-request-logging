@@ -20,7 +20,7 @@ final class PasswordTooShortExceptionTest extends TestCase
     {
         $exception = new PasswordTooShortException();
 
-        $this->assertEquals('Password must be at least 8 characters long.', $exception->getMessage());
+        $this->assertEquals('Password must be at least 12 characters long.', $exception->getMessage());
     }
 
     public function testGetCategoryReturnsValidation(): void

@@ -20,15 +20,73 @@ class ShopControlTest extends TestCase
         $this->redactUrlQueryParamsMethod->setAccessible(true);
     }
 
-    private function invokeRedactUrlQueryParams(?string $url): ?string
-    {
+    private function invokeRedactUrlQueryParams(
+        ?string $url,
+        bool $redactAll = true,
+        array $blocklistLower = []
+    ): ?string {
         // Create a partial mock that allows calling the real private method
         $shopControl = $this->getMockBuilder(ShopControl::class)
             ->disableOriginalConstructor()
             ->onlyMethods([]) // Don't mock any methods, use the real implementation
             ->getMock();
 
-        return $this->redactUrlQueryParamsMethod->invoke($shopControl, $url);
+        return $this->redactUrlQueryParamsMethod->invoke($shopControl, $url, $redactAll, $blocklistLower);
+    }
+
+    private function invokePseudonymizeSessionId(?string $sessionId): ?string
+    {
+        $reflection = new ReflectionClass(ShopControl::class);
+        $method = $reflection->getMethod('pseudonymizeSessionId');
+        $method->setAccessible(true);
+
+        $shopControl = $this->getMockBuilder(ShopControl::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods([])
+            ->getMock();
+
+        return $method->invoke($shopControl, $sessionId);
+    }
+
+    public function testRedactUrlQueryParams_BlocklistMode_RedactsOnlyBlocklistedKeys(): void
+    {
+        // In blocklist mode the URI must still hide blocklisted query values
+        // (previously it was logged raw, leaking e.g. ?token=SECRET even though
+        // the same key was redacted inside the get[] array).
+        $url = 'http://localhost.local/index.php?cl=account&token=SECRET&keep=visible';
+        $result = $this->invokeRedactUrlQueryParams($url, false, ['token']);
+
+        $this->assertStringContainsString('token=[redacted]', $result);
+        $this->assertStringNotContainsString('SECRET', $result);
+        $this->assertStringContainsString('keep=visible', $result);
+        $this->assertStringContainsString('cl=account', $result);
+    }
+
+    public function testRedactUrlQueryParams_BlocklistMode_IsCaseInsensitive(): void
+    {
+        $url = 'http://localhost.local/index.php?Token=SECRET';
+        $result = $this->invokeRedactUrlQueryParams($url, false, ['token']);
+
+        $this->assertStringContainsString('Token=[redacted]', $result);
+        $this->assertStringNotContainsString('SECRET', $result);
+    }
+
+    public function testPseudonymizeSessionId_HidesRawValueButStaysStable(): void
+    {
+        $raw = 'dc9440e1fcd2cf8f3a7a623ae65c505f';
+
+        $a = $this->invokePseudonymizeSessionId($raw);
+        $b = $this->invokePseudonymizeSessionId($raw);
+
+        $this->assertSame($a, $b, 'Same session id must map to the same pseudonym (support correlation).');
+        $this->assertStringNotContainsString($raw, (string) $a, 'Raw session id must never appear in the log.');
+        $this->assertStringStartsWith('sha256:', (string) $a);
+    }
+
+    public function testPseudonymizeSessionId_EmptyStaysEmpty(): void
+    {
+        $this->assertSame('', $this->invokePseudonymizeSessionId(''));
+        $this->assertNull($this->invokePseudonymizeSessionId(null));
     }
 
     public function testRedactUrlQueryParams_WithNull_ReturnsNull(): void

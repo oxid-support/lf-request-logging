@@ -15,7 +15,7 @@ final class UserNotFoundException extends Error
 {
     public function __construct()
     {
-        parent::__construct('API user not found. Please run the module migrations first.');
+        parent::__construct('API user not found.');
     }
 
     public function getCategory(): string

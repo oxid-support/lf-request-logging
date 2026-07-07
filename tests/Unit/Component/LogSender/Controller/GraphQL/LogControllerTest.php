@@ -218,6 +218,34 @@ final class LogControllerTest extends TestCase
         $this->sut->logSenderContent('test_source', 5000);
     }
 
+    public function testLogSenderContentClampsMaxBytesToConfiguredCeiling(): void
+    {
+        // A caller must not exceed the admin-configured max bytes. An
+        // unclamped huge value both bypasses that limit and loads the whole
+        // file into memory (DoS). The controller clamps down to the ceiling.
+        $filePath = $this->createTempFile('test.log', 'content');
+        $logPath = new LogPath($filePath, LogPathType::FILE, 'Test Log');
+        $source = $this->createSourceWithPaths('test_source', 'Test', [$logPath], true);
+
+        $this->mockSettings->method('getCollection')
+            ->willReturn(['test_source']);
+        $this->mockSettings->method('getInteger')
+            ->willReturn(1000);
+
+        $this->mockCollector->method('getSourceById')
+            ->willReturn($source);
+
+        $this->mockReader->expects($this->once())
+            ->method('readFile')
+            ->with($filePath, 1000) // clamped down from PHP_INT_MAX
+            ->willReturn('content');
+
+        $this->mockReader->method('getFileInfo')
+            ->willReturn(['size' => 100, 'modified' => time()]);
+
+        $this->sut->logSenderContent('test_source', PHP_INT_MAX);
+    }
+
     public function testLogSenderContentDetectsTruncatedContent(): void
     {
         $filePath = $this->createTempFile('test.log', 'Some content');

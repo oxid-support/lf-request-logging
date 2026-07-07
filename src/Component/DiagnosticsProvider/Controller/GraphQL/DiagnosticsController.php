@@ -29,7 +29,7 @@ final class DiagnosticsController
      */
     #[Query]
     #[Logged]
-    #[Right('LOG_SENDER_VIEW')]
+    #[Right('DIAGNOSTICS_VIEW')]
     public function diagnostics(): ?DiagnosticsType
     {
         if (!$this->statusService->isActive()) {

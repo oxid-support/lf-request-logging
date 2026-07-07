@@ -23,6 +23,9 @@ use TheCodingMachine\GraphQLite\Annotations\Right;
 
 final class LogController
 {
+    /** Fallback ceiling when the configured max bytes is missing or invalid (1 MiB). */
+    private const DEFAULT_MAX_BYTES = 1048576;
+
     public function __construct(
         private readonly LogCollectorServiceInterface $logCollectorService,
         private readonly LogReaderServiceInterface $logReaderService,
@@ -80,13 +83,20 @@ final class LogController
             throw new \InvalidArgumentException("Source '{$sourceId}' is not available.");
         }
 
-        // Use configured max bytes or default
-        if ($maxBytes === null) {
-            $maxBytes = (int) $this->moduleSettingService->getInteger(
-                Module::SETTING_LOGSENDER_MAX_BYTES,
-                Module::ID
-            );
+        // The admin-configured max bytes is a hard ceiling, not just a default.
+        // Clamp any caller-supplied value to it: a larger value would bypass the
+        // limit and force the reader to load the whole file into memory (DoS).
+        $configuredMax = (int) $this->moduleSettingService->getInteger(
+            Module::SETTING_LOGSENDER_MAX_BYTES,
+            Module::ID
+        );
+        if ($configuredMax <= 0) {
+            $configuredMax = self::DEFAULT_MAX_BYTES;
         }
+
+        $maxBytes = ($maxBytes === null)
+            ? $configuredMax
+            : max(1, min($maxBytes, $configuredMax));
 
         // Get the first available file from the source
         $filePath = $this->findFirstReadableFile($source);

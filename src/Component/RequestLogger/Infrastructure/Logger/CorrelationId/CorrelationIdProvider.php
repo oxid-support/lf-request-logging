@@ -25,9 +25,23 @@ final class CorrelationIdProvider implements CorrelationIdProviderInterface
 
     public function provide(): string
     {
-        $id = $this->resolver->resolve() ?? $this->generator->generate();
+        $resolved = $this->resolver->resolve();
+
+        // A resolved id comes from a client cookie/header and is attacker
+        // controlled (PHP URL-decodes cookies, so it may contain newlines or
+        // control chars). Only accept a safe token; otherwise generate a fresh
+        // one, so a malicious value can never reach the log content.
+        $id = ($resolved !== null && $this->isValid($resolved))
+            ? $resolved
+            : $this->generator->generate();
+
         $this->emitter->emit($id);
 
         return $id;
+    }
+
+    private function isValid(string $id): bool
+    {
+        return preg_match('/^[A-Za-z0-9\-_]{1,64}$/', $id) === 1;
     }
 }

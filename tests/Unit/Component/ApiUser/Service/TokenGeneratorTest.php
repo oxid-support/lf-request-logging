@@ -64,13 +64,30 @@ final class TokenGeneratorTest extends TestCase
         $this->assertCount(0, $method->getParameters());
     }
 
-    public function testGenerateRequiresOxidFramework(): void
+    public function testGenerateReturnsCryptographicallyStrongToken(): void
     {
-        // This test documents that generate() requires OXID's Registry
-        // In a real OXID environment, this would return a unique ID
-        $this->markTestSkipped(
-            'TokenGenerator::generate() requires OXID Registry'
-            . ' which is not available in unit tests.'
+        // The setup token is the only gate on the unauthenticated
+        // heartbeatSetPassword mutation, so it must come from a CSPRNG.
+        // random_bytes(32) rendered as hex is 64 lowercase hex chars.
+        $token = (new TokenGenerator())->generate();
+
+        $this->assertSame(
+            1,
+            preg_match('/^[a-f0-9]{64}$/', $token),
+            'Setup token must be 64 hex chars from a CSPRNG (random_bytes(32)), '
+            . 'not an md5(uniqid()) value.'
         );
+    }
+
+    public function testGenerateReturnsDistinctTokens(): void
+    {
+        $generator = new TokenGenerator();
+
+        $tokens = [];
+        for ($i = 0; $i < 100; $i++) {
+            $tokens[$generator->generate()] = true;
+        }
+
+        $this->assertCount(100, $tokens, 'Every generated token must be unique.');
     }
 }

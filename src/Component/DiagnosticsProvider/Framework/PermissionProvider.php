@@ -16,13 +16,13 @@ final class PermissionProvider implements PermissionProviderInterface
     public function getPermissions(): array
     {
         return [
-                        // Custom user group for Log Sender API access
+            // Dedicated diagnostics right, separate from LOG_SENDER_VIEW, so
+            // "read diagnostics" and "read logs" can be granted independently.
             'oxsheartbeat_api' => [
-                'LOG_SENDER_VIEW',
+                'DIAGNOSTICS_VIEW',
             ],
-            // Also grant permissions to shop admins
             'oxidadmin' => [
-                'LOG_SENDER_VIEW',
+                'DIAGNOSTICS_VIEW',
             ],
         ];
     }
