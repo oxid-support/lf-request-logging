@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - API user setup workflow and actions moved from the module config "Einstell." tab to the dedicated "OXS :: Heartbeat > API User" admin page. The "Einstell." tab now shows only a hint linking there. This also eliminates a stale-status bug where the "Einstell." tab claimed setup was complete while the API User page still showed the token-send step active.
 - Module activation no longer runs database migrations. Operators run `oe-eshop-doctrine_migration migrations:migrate oxsheartbeat` as an explicit step before activation (already documented in README).
 
+### Removed
+- GraphQL mutation `requestLoggerRedactChange`. The redact field list (values that are always redacted from request logs, even when "redact all values" is disabled) can now only be changed by the shop admin via the module's admin settings page. The read query `requestLoggerRedact` is unaffected. Removed with it: `SettingServiceInterface::setRedactItems()` and the internal exception class `InvalidCollectionException` (PHP-level BC break for code extending the remote setting service).
+
 ### Fixed
 - `heartbeatSetPassword` restores the setup token when the password update fails, keeping setup retryable instead of locking out the service user.
 

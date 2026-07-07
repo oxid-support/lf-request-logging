@@ -54,9 +54,27 @@ class AuthorizationSecurityTest extends TestCase
             ['requestLoggerLogLevelChange'],
             ['requestLoggerLogFrontendChange'],
             ['requestLoggerLogAdminChange'],
-            ['requestLoggerRedactChange'],
             ['requestLoggerRedactAllValuesChange'],
         ];
+    }
+
+    /**
+     * The redact field list decides which values never reach the logs. Only the shop
+     * admin may change it via the admin settings form; there must be no remote
+     * (GraphQL) write path for it.
+     */
+    public function testRedactFieldsCannotBeChangedRemotely(): void
+    {
+        $this->assertFalse(
+            method_exists(SettingController::class, 'requestLoggerRedactChange'),
+            'requestLoggerRedactChange must not exist - redact fields are shop admin only'
+        );
+
+        $this->assertNotContains(
+            'requestLoggerRedactChange',
+            \OxidSupport\Heartbeat\Module\Module::SUPPORTED_OPERATIONS,
+            'requestLoggerRedactChange must not be advertised as a supported operation'
+        );
     }
 
     // ===========================================
@@ -150,7 +168,6 @@ class AuthorizationSecurityTest extends TestCase
             [SettingController::class, 'requestLoggerLogLevelChange'],
             [SettingController::class, 'requestLoggerLogFrontendChange'],
             [SettingController::class, 'requestLoggerLogAdminChange'],
-            [SettingController::class, 'requestLoggerRedactChange'],
             [SettingController::class, 'requestLoggerRedactAllValuesChange'],
         ];
 

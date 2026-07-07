@@ -15,7 +15,6 @@ use OxidEsales\GraphQL\ConfigurationAccess\Shared\DataType\StringSetting;
 use OxidEsales\GraphQL\ConfigurationAccess\Shared\DataType\SettingType as ConfigAccessSettingType;
 use OxidSupport\Heartbeat\Component\RequestLogger\DataType\SettingType;
 use OxidSupport\Heartbeat\Module\Module as RequestLoggerModule;
-use OxidSupport\Heartbeat\Component\RequestLogger\Exception\InvalidCollectionException;
 use OxidSupport\Heartbeat\Component\RequestLogger\Service\Remote\SettingService;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -125,72 +124,6 @@ final class SettingServiceTest extends TestCase
         $result = $this->getSut(moduleSettingService: $moduleSettingService)->getRedactItems();
 
         $this->assertSame('["password","secret","token"]', $result);
-    }
-
-    public function testSetRedactItemsDecodesJsonAndSaves(): void
-    {
-        $jsonValue = '["password","token"]';
-
-        $moduleSettingService = $this->createMock(ModuleSettingServiceInterface::class);
-        $moduleSettingService
-            ->expects($this->once())
-            ->method('changeCollectionSetting')
-            ->with(self::SETTING_REDACT, $jsonValue, RequestLoggerModule::ID)
-            ->willReturn(new StringSetting(self::SETTING_REDACT, $jsonValue));
-
-        $result = $this->getSut(moduleSettingService: $moduleSettingService)->setRedactItems($jsonValue);
-
-        $this->assertSame($jsonValue, $result);
-    }
-
-    public function testSetRedactItemsThrowsExceptionForInvalidJson(): void
-    {
-        $this->expectException(InvalidCollectionException::class);
-        $this->expectExceptionMessage('Invalid JSON array provided for redact items');
-
-        $this->getSut()->setRedactItems('not valid json');
-    }
-
-    public function testSetRedactItemsRejectsAssociativeArray(): void
-    {
-        // JSON objects with non-numeric keys decode to associative arrays in PHP,
-        // which should be rejected for security reasons (prevents prototype pollution attacks)
-        $this->expectException(InvalidCollectionException::class);
-        $this->expectExceptionMessage('must be a list, not an object');
-
-        // Create a mock that won't be called (exception should be thrown before)
-        $moduleSettingService = $this->createMock(ModuleSettingServiceInterface::class);
-        $moduleSettingService
-            ->expects($this->never())
-            ->method('changeCollectionSetting');
-
-        $service = new SettingService($moduleSettingService);
-        // Use non-numeric keys to ensure it's a real associative array
-        $service->setRedactItems('{"key": "password", "other": "token"}');
-    }
-
-    public function testSetRedactItemsAcceptsObjectWithNumericStringKeys(): void
-    {
-        // JSON objects with numeric string keys (e.g., "0", "1") are converted
-        // to PHP arrays with integer keys, which passes array_is_list()
-        $jsonValue = '{"0": "password", "1": "token"}';
-
-        $moduleSettingService = $this->createMock(ModuleSettingServiceInterface::class);
-        $moduleSettingService
-            ->expects($this->once())
-            ->method('changeCollectionSetting')
-            ->willReturn(new StringSetting(self::SETTING_REDACT, '["password","token"]'));
-
-        $result = (new SettingService($moduleSettingService))->setRedactItems($jsonValue);
-        $this->assertIsString($result);
-    }
-
-    public function testSetRedactItemsThrowsExceptionForJsonString(): void
-    {
-        $this->expectException(InvalidCollectionException::class);
-        $this->expectExceptionMessage('Invalid JSON array provided for redact items');
-
-        $this->getSut()->setRedactItems('"just a string"');
     }
 
     public function testIsRedactAllValuesEnabledReturnsBool(): void

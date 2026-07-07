@@ -12,7 +12,6 @@ namespace OxidSupport\Heartbeat\Component\RequestLogger\Service\Remote;
 use OxidEsales\GraphQL\ConfigurationAccess\Module\Service\ModuleSettingServiceInterface as ConfigAccessSettingService;
 use OxidSupport\Heartbeat\Component\RequestLogger\DataType\SettingType;
 use OxidSupport\Heartbeat\Module\Module as RequestLoggerModule;
-use OxidSupport\Heartbeat\Component\RequestLogger\Exception\InvalidCollectionException;
 
 final class SettingService implements SettingServiceInterface
 {
@@ -73,25 +72,6 @@ final class SettingService implements SettingServiceInterface
     {
         return $this->moduleSettingService
             ->getCollectionSetting(self::SETTING_REDACT, RequestLoggerModule::ID)
-            ->getValue();
-    }
-
-    public function setRedactItems(string $jsonValue): string
-    {
-        $items = json_decode($jsonValue, true);
-
-        if (!is_array($items)) {
-            throw new InvalidCollectionException('Invalid JSON array provided for redact items');
-        }
-
-        if (!array_is_list($items)) {
-            throw new InvalidCollectionException(
-                'Invalid JSON array provided for redact items - must be a list, not an object'
-            );
-        }
-
-        return $this->moduleSettingService
-            ->changeCollectionSetting(self::SETTING_REDACT, $jsonValue, RequestLoggerModule::ID)
             ->getValue();
     }
 
