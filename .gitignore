@@ -9,3 +9,4 @@ var/
 <sCompileDir>/
 composer.phar
 composer-setup.php
+/.claude/settings.local.json
