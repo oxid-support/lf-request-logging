@@ -54,14 +54,15 @@ final class TokenInvalidationTest extends TokenTestCase
 
     public function testInvalidateTokensMutationDropsApiUserTokens(): void
     {
+        $baseline = $this->apiUserTokenCount();
         $this->seedApiUserToken();
-        $this->assertSame(1, $this->apiUserTokenCount());
+        $this->assertSame($baseline + 1, $this->apiUserTokenCount());
 
         $this->prepareToken(); // admin (oxidadmin) carries the token-invalidate right
         $result = $this->query('mutation { heartbeatInvalidateTokens }');
 
         $this->assertArrayNotHasKey('errors', $result['body'], $this->dump($result));
-        $this->assertSame(1, $result['body']['data']['heartbeatInvalidateTokens']);
+        $this->assertSame($baseline + 1, $result['body']['data']['heartbeatInvalidateTokens']);
         $this->assertSame(0, $this->apiUserTokenCount());
     }
 
@@ -73,8 +74,9 @@ final class TokenInvalidationTest extends TokenTestCase
         // heartbeatInvalidateTokens test above; the heartbeatResetPassword
         // controller additionally persists a module setting, which the
         // in-process TestContainer does not provide.
+        $baseline = $this->apiUserTokenCount();
         $this->seedApiUserToken();
-        $this->assertSame(1, $this->apiUserTokenCount());
+        $this->assertSame($baseline + 1, $this->apiUserTokenCount());
 
         /** @var ApiUserServiceInterface $apiUserService */
         $apiUserService = ContainerFactory::getInstance()
@@ -87,8 +89,9 @@ final class TokenInvalidationTest extends TokenTestCase
 
     public function testModuleDeactivationDropsApiUserTokens(): void
     {
+        $baseline = $this->apiUserTokenCount();
         $this->seedApiUserToken();
-        $this->assertSame(1, $this->apiUserTokenCount());
+        $this->assertSame($baseline + 1, $this->apiUserTokenCount());
 
         ModuleEvents::onDeactivate();
 
@@ -111,8 +114,9 @@ final class TokenInvalidationTest extends TokenTestCase
          * itself is exercised here so the admin entry point cannot silently
          * break without the mutation breaking too.
          */
+        $baseline = $this->apiUserTokenCount();
         $this->seedApiUserToken();
-        $this->assertSame(1, $this->apiUserTokenCount());
+        $this->assertSame($baseline + 1, $this->apiUserTokenCount());
 
         $controller = oxNew(SetupController::class);
         $controller->invalidateTokens();
@@ -122,8 +126,9 @@ final class TokenInvalidationTest extends TokenTestCase
 
     public function testServiceUserEditDropsApiUserTokens(): void
     {
+        $baseline = $this->apiUserTokenCount();
         $this->seedApiUserToken();
-        $this->assertSame(1, $this->apiUserTokenCount());
+        $this->assertSame($baseline + 1, $this->apiUserTokenCount());
 
         $user = oxNew(User::class);
         $user->load($this->apiUserId);
