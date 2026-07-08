@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- **Breaking:** the shop admin group (`oxidadmin`) no longer has GraphQL access to the Request Logger, Log Sender and Diagnostics operations. These are support-only endpoints, called by the `oxsheartbeat_api` service user; admins configure via the backend UI, not the API. Customers who used their OXID admin user for remote settings/log/diagnostics queries lose that access (least privilege, OXS-3050).
+
 ## [4.0.0] - 2026-07-08
 
 ### Changed
@@ -28,7 +31,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `heartbeatSetPassword` restores the setup token when the password update fails, keeping setup retryable instead of locking out the service user.
 
 ### Security
-- **Breaking:** the shop admin group (`oxidadmin`) no longer has GraphQL access to the Request Logger, Log Sender and Diagnostics operations. These are support-only endpoints, called by the `oxsheartbeat_api` service user; admins configure via the backend UI, not the API. Customers who used their OXID admin user for remote settings/log/diagnostics queries lose that access (least privilege, OXS-3050).
 - Setup token now uses a CSPRNG (`random_bytes`) instead of `md5(uniqid())`, closing a predictable-token path to taking over the API user via the unauthenticated `heartbeatSetPassword`.
 - Leak response for a compromised service-user token: `heartbeatInvalidateTokens` (callable by the service user) revokes all of its JWTs including a stolen one, while `heartbeatResetPassword` and the service user's password-reset right are removed. A token thief cannot rotate the password to re-establish access, and support re-authenticates with the password it holds.
 - Sensitive-data redaction now recurses into nested arrays/objects, so a blocklisted key (e.g. `password`) nested in a request body is no longer logged in clear.
