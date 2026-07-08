@@ -90,13 +90,13 @@ class AuthorizationSecurityTest extends TestCase
         $this->assertNotEmpty($permissions['oxsheartbeat_api']);
     }
 
-    public function testPermissionsAreDefinedForAdminGroup(): void
+    public function testAdminGroupIsNotGranted(): void
     {
         $provider = new PermissionProvider();
         $permissions = $provider->getPermissions();
 
-        $this->assertArrayHasKey('oxidadmin', $permissions);
-        $this->assertNotEmpty($permissions['oxidadmin']);
+        // Support-only: shop admins have no GraphQL rights here (least privilege, OXS-3050).
+        $this->assertArrayNotHasKey('oxidadmin', $permissions);
     }
 
     public function testAllRequiredPermissionsExist(): void
@@ -109,7 +109,7 @@ class AuthorizationSecurityTest extends TestCase
             'REQUEST_LOGGER_CHANGE',
         ];
 
-        foreach (['oxsheartbeat_api', 'oxidadmin'] as $group) {
+        foreach (['oxsheartbeat_api'] as $group) {
             foreach ($requiredPermissions as $permission) {
                 $this->assertContains(
                     $permission,
