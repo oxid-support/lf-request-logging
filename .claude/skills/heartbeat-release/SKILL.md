@@ -7,7 +7,7 @@ description: Release/publish workflow for the OXS Heartbeat module (oxid-support
 
 Releasing is a separate concern from developing (see `heartbeat-dev` for making changes across the three OXID lines). This skill takes an already-committed, CI-green state and turns it into published tags/releases, cleanly.
 
-The module ships **manually, tag-based** (no release-please/semantic-release in the repo). Packagist auto-updates from GitHub tags. The version lives in one place: `src/Module/Module.php` `HeartbeatModule::VERSION`; `metadata.php` reads it. Full rationale for the versioning model: `docs/modul-versioning-strategie.md` in the workspace root, read it before your first release.
+The module ships **manually, tag-based** (no release-please/semantic-release in the repo). Packagist auto-updates from GitHub tags. The version lives in one place: `src/Module/Module.php` `HeartbeatModule::VERSION`; `metadata.php` reads it. The full versioning model (version streams, the widen-vs-fork constraint decision, and version numbering) is documented in the sections of this skill below.
 
 ## The three version streams
 
