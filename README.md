@@ -81,27 +81,19 @@ Composer picks the right module version based on the installed OXID eShop. Custo
 
 ## Branch structure
 
-This repo follows a reactive stabilization-branch pattern (similar to Symfony and Doctrine). Every supported OXID line gets its own `b-<X.Y>.x` branch as a peer; there is no privileged `main` branch. The most recent line is configured as the default branch on GitHub so a fresh clone lands on it.
+This repo follows a Symfony / Doctrine style stabilization-branch layout: one long-lived branch per supported OXID line, no `main`. The most recent line is the default branch on GitHub, so a fresh clone lands on it.
 
 * **`b-7.1.x`** (default) active development for the OXID 7.1 to 7.5 line, Heartbeat 2.x
 * **`b-7.0.x`** maintenance branch for the OXID 7.0 line, Heartbeat 3.x
 * **`b-6.5.x`** maintenance branch for the OXID 6.5 line, Heartbeat 1.x (this branch)
-* Future lines (e.g. `b-7.6.x`) are cut reactively when OXID introduces a BC-break and the previous line still needs to be supported
+
+When OXID introduces a new line that needs separate maintenance, a new `b-<X.Y>.x` branch is cut from the current default.
 
 Where to open your PR:
 
 * Bug or feature for OXID 7.1 to 7.5 → `b-7.1.x`
 * Bug for OXID 7.0 only → `b-7.0.x`
 * Bug for OXID 6.5 only → `b-6.5.x`
-
-## Release policy
-
-Each OXID eShop release (patch, minor or major) is reviewed for compatibility with the maintained module lines. One of two outcomes:
-
-* **Compatible without code changes** → a module patch release widens the `oxid-esales/oxideshop-ce` constraint inside the existing module line (e.g. a future 1.0.x covers OXID eShop 6.5 + 6.6 once verified).
-* **Breaking change in OXID eShop** → a new module major is cut on a fresh `b-<X.Y>.x` stabilization branch, taking the next free major across all lines (majors are a repo-wide chronological sequence, not tied to the OXID version).
-
-In either case the module follows OXID eShop, not the other way around. Customers always `composer require oxid-support/heartbeat` without a manual version pin; Composer resolves to the correct module version for the installed OXID eShop.
 
 ## Updating an existing installation
 
