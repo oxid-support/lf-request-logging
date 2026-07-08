@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.0] - 2026-07-08
+
 ### Changed
 - `metadata.php` reads the module version from `HeartbeatModule::VERSION` instead of duplicating the literal string. `Module.php` is the single source of truth from this release on.
 - Active sessions of the `heartbeat-api` service user are terminated immediately on password reset and on module deactivation.
