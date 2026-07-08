@@ -1,6 +1,6 @@
 ---
 name: heartbeat-dev
-description: Expert workflow for developing and releasing the OXS Heartbeat module across multiple OXID versions. Use this skill for ANY change to the heartbeat module in this workspace: bug fixes, features, refactorings, security changes, test changes, version bumps, changelogs, tagging, or GitHub releases. Also use it when answering questions about the module's branch strategy, version lines, or release process. Even a "one line fix" must go through this workflow, because every change targets three parallel version lines.
+description: Expert workflow for developing the OXS Heartbeat module across its three parallel OXID version lines (6.5/7.0/7.1). Use this skill for ANY code change to the heartbeat module in this workspace: bug fixes, features, refactorings, security changes, test changes, changelog entries. Also use it for questions about the module's branch strategy and version lines. Even a "one line fix" must go through this workflow, because every change targets three parallel version lines. For cutting a release (choosing the version number, finalizing the changelog into a dated section, tagging, GitHub release, and the constraint/branch decision when a new OXID version appears), use the separate heartbeat-release skill.
 ---
 
 # Heartbeat Module Development Workflow
@@ -21,26 +21,7 @@ Module majors are assigned **chronologically across all lines**, not mapped to O
 
 A branch is not pinned to a single OXID version; it covers a **range** that grows over time. `b-7.1.x` started at OXID 7.1 and today covers 7.1 to 7.5 because each compatible OXID release widened its upper bound. The branch name records where the line started, the composer constraint records what it currently covers. Always read the constraint, not the name, to know coverage.
 
-## When OXID releases a new version
-
-Example: OXID 7.6 appears. Do not reflexively create a branch. Run the decision tree (2 week window, details in the strategy doc):
-
-1. **Test the newest covering line against the new OXID version.** For 7.6 that is `b-7.1.x` (its constraint `<7.6` excludes it so far, which is intentional: untested means excluded).
-2. **Tests green (no BC break):** stay on the existing branch. Release a **patch** on that line that only widens the upper bound (`<7.6` becomes `<7.7`). Customers pick it up via plain `composer update`, no action needed. This is the common case and must stay friction free.
-3. **Tests red (BC break in the module interface):** create a **new line branch** from the last compatible one, named after the first OXID version it targets (consistent with the existing names: `b-7.6.x`). Adapt the code there, give it a **new module major**: the next free major number across the whole repo (currently that would be 4.x, since 1.x to 3.x are taken). The old branch keeps its capped constraint and lives on for its OXID range.
-4. **OXID security patch:** same tree, but fast tracked (target under 48 hours), usually just the constraint widening patch.
-
-Creating a new line also means: new README branch banner on every line (the switcher at the top lists all lines), a workspace installation for the new OXID version, and a CI workflow (`php.yml`) adjusted to the new branch name and PHP matrix.
-
-## Which tag when
-
-Tags are global across the repo but each line owns its major range. Within a line, standard SemVer:
-
-* **Patch** (2.0.4 to 2.0.5): bug fix, constraint widening after a green OXID compatibility test, doc fix.
-* **Minor** (2.0.x to 2.1.0): new feature on that line, backwards compatible.
-* **New major**: only for a module BC break on an existing line, or for a brand new line after an OXID BC break. Either way take the **next free major across all lines**, never a "logical" number. A major on the old line does not move existing customers: composer's caret constraint keeps them on their line until they act.
-
-Never tag ahead of the constraint: the constraint in the tagged `composer.json` is what composer evaluates, so it must state exactly the OXID range that was actually tested for that tag.
+Releasing is out of scope here: choosing the version number, finalizing the changelog into a dated section, tagging, the GitHub release, and the constraint/branch decision when a new OXID version appears (widen the constraint vs fork a new line branch) all live in the **`heartbeat-release`** skill.
 
 ## Making a change
 
@@ -76,22 +57,6 @@ The dashboard's compatibility check is **asymmetric**: a shop with *extra* opera
 * **Adding an operation the dashboard will call** is the mirror case: an old module lacking it is `incompatible` for that feature, so ship the module first or together and gate the dashboard feature on the version check.
 
 Concretely, when you remove or change an operation, tell the user: "this needs a parallel PR in `heartbeat-dashboard` that drops/updates the same operation in `graphqlOperations.js` and any calling code, delivered alongside this module change", and state the deploy order. Worked example: removing the `requestLoggerRedactChange` mutation (so the redact-field list is shop-admin-only) required the dashboard to drop it from the registry, remove the toggle path, and make the redact list read-only; without that parallel dashboard deploy, older dashboards hit `incompatible` plus errors when changing redact fields.
-
-## Version bump and release
-
-`src/Module/Module.php` holds `HeartbeatModule::VERSION` as the **single source of truth**; `metadata.php` reads it. Never write a version literal into `metadata.php`.
-
-Release steps per line (details and constraint policy in `docs/modul-versioning-strategie.md`):
-
-1. Bump `VERSION` in `Module.php` on the line branch. Patch/minor/major per SemVer **within that line's major range**.
-2. Move the `[Unreleased]` changelog entries into a new dated version section.
-3. Verify the `oxid-esales/oxideshop-ce` constraint in `composer.json` still matches what was actually tested. Keep a **tight upper bound**; widening it is itself a release-worthy change.
-4. Push the branch, wait for the GitHub Actions workflow (`php.yml`, runs per branch) to go green. No green CI, no tag.
-5. Tag on the line branch. Tags are global across the repo; pick the next free number within the line's major. Never reuse or renumber a published tag. Force-pushing a tag is an emergency measure only (constraint hotfix, see the 2.0.1/2.0.2 history in the 7-line CHANGELOG) and needs explicit user approval.
-6. Create the GitHub release. Title format carries the codename and the OXID target, for example: `Heartbeat "Borealis" 2.1.0 (für OXID 7.1)`. Body states which OXID versions are covered and reminds other-version users that `composer require oxid-support/heartbeat` resolves automatically.
-7. Packagist picks the tag up automatically; no manual publish step.
-
-A cross-line release (same fix on all three lines) means three version bumps, three changelog sections, three tags, three GitHub releases. Do them line by line, completing one before starting the next, so a CI failure on one line does not leave half-tagged state elsewhere.
 
 ## Every component has an on/off switch (hard rule)
 
