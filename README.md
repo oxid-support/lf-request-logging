@@ -116,7 +116,11 @@ Then refresh the shop:
 
 The deactivate + activate re-reads the new `metadata.php` into OXID's database-cached module registry (version number shown in the admin, controller registrations, settings layout). Module configuration values (API user token, request logger settings, etc.) are preserved.
 
-When upgrading OXID itself, bump OXID and Heartbeat together in a single resolve:
+When upgrading OXID itself, follow the official OXID upgrade guide at
+https://docs.oxid-esales.com. The only Heartbeat-specific point is to bump OXID
+and the module together in one resolve, so the module version matching the new
+OXID is picked up. The commands below are an illustrative example, not a
+replacement for the official procedure:
 
 ```bash
 composer require \
@@ -125,10 +129,20 @@ composer require \
   --with-all-dependencies
 ```
 
-Two outcomes:
+Three outcomes:
 
-* **Compatible Heartbeat version exists**: Composer installs it automatically.
-* **No matching Heartbeat yet**: Composer fails before any change is written. Wait for the next release or temporarily remove the module before the OXID upgrade.
+* **Compatible Heartbeat version exists** (the installed line already covers the new OXID): the resolve above installs it, nothing else to do.
+* **The OXID upgrade crosses a Heartbeat major** (a newer Heartbeat major targets the new OXID line): the combined resolve can fail because Composer keeps the old Heartbeat constraint. Bump the module constraint first, then resolve:
+
+    ```bash
+    composer require oxid-support/heartbeat --no-update
+    composer require \
+      oxid-esales/oxideshop-metapackage-ee:vX.Y.Z \
+      oxid-support/heartbeat \
+      --with-all-dependencies
+    ```
+
+* **No matching Heartbeat yet**: Composer fails before any change is written. Wait for the next Heartbeat release, or temporarily remove the module before the OXID upgrade.
 
 ---
 
