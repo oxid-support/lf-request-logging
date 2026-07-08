@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.0.0] - 2026-07-08
+
 ### Changed
 - Active sessions of the `heartbeat-api` service user are terminated immediately on password reset and on module deactivation.
 - New admin button "Terminate API Sessions" in the API user setup UI.

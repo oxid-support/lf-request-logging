@@ -68,19 +68,19 @@ For more details on OXID GraphQL installation, see the [official documentation](
 
 ## Compatibility
 
-* **Module 1.x**: OXID 6.5
-* **Module 3.x**: OXID 7.0.x (this branch)
-* **Module 2.x**: OXID 7.1 to 7.5.x
+* **Module 4.x**: OXID 6.5
+* **Module 5.x**: OXID 7.0.x (this branch)
+* **Module 6.x**: OXID 7.1 to 7.5.x
 
-Composer picks the right module version based on the installed OXID eShop. Customers never need to specify a module version manually. Module majors are a repo-wide chronological sequence, not a per-OXID-version number: that is why the OXID 7.0 line is 3.x while the OXID 7.1 line is 2.x.
+Composer picks the right module version based on the installed OXID eShop. Customers never need to specify a module version manually. Module majors are a repo-wide chronological sequence assigned at release time, not tied to the OXID version.
 
 ## Branch structure
 
 This repo follows a Symfony / Doctrine style stabilization-branch layout: one long-lived branch per supported OXID line, no `main`. The most recent line is the default branch on GitHub, so a fresh clone lands on it.
 
-* **`b-7.1.x`** (default) active development for the OXID 7.1 to 7.5 line, Heartbeat 2.x
-* **`b-7.0.x`** maintenance branch for the OXID 7.0 line, Heartbeat 3.x (this branch)
-* **`b-6.5.x`** maintenance branch for the OXID 6.5 line, Heartbeat 1.x
+* **`b-7.1.x`** (default) active development for the OXID 7.1 to 7.5 line, Heartbeat 6.x
+* **`b-7.0.x`** maintenance branch for the OXID 7.0 line, Heartbeat 5.x (this branch)
+* **`b-6.5.x`** maintenance branch for the OXID 6.5 line, Heartbeat 4.x
 
 When OXID introduces a new line that needs separate maintenance, a new `b-<X.Y>.x` branch is cut from the current default.
 
