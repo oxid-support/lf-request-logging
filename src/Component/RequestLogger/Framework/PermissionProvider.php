@@ -15,12 +15,11 @@ final class PermissionProvider implements PermissionProviderInterface
 {
     public function getPermissions(): array
     {
+        // Support-only operations: only the oxsheartbeat_api service user may call these
+        // over GraphQL. Shop admins configure via the backend UI, not the API, so oxidadmin
+        // is intentionally not mapped here (least privilege, OXS-3050).
         return [
             'oxsheartbeat_api' => [
-                'REQUEST_LOGGER_VIEW',
-                'REQUEST_LOGGER_CHANGE',
-            ],
-            'oxidadmin' => [
                 'REQUEST_LOGGER_VIEW',
                 'REQUEST_LOGGER_CHANGE',
             ],
