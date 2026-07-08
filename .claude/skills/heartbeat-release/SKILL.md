@@ -24,7 +24,7 @@ Module majors are **chronological across all lines**, not mapped to OXID majors,
 * All intended changes are committed on the line branches and pushed.
 * CI (`php.yml`) is green on each branch you are about to tag. No green, no tag.
 * Each line's `## [Unreleased]` changelog section is complete and matches the shipped code.
-* Any GraphQL-surface change is already coordinated with the dashboard and its rollout order is clear (see the cross-repo section below).
+* If this release changed the shared GraphQL contract, the matching dashboard change is **already published**. The dashboard must always be live first; **ask the user to confirm it is published before you tag** and do not cut until they do (see the cross-repo section below).
 
 ## A new OXID version appears: widen the constraint or fork a branch?
 
@@ -75,9 +75,15 @@ Reconcile on every release, and verify before you tag:
 4. When a **new major scheme jump** ships (e.g. a line moving 1.x to 4.x under the global-major rule), add a one-line note in the README explaining that majors are a repo-wide chronological sequence, so the jump does not read as arbitrary.
 5. No em/en dashes in the range text: write "7.1 to 7.5", per house style.
 
-## Cross-repo coordination (dashboard)
+## Cross-repo coordination (dashboard): dashboard ships first, always
 
-The GraphQL operations are a shared contract with `heartbeat-dashboard`. A release that changed the GraphQL surface must ship in the right order: a **removed/renamed** operation → the dashboard drops it first or together; an **added** operation the dashboard will call → the module ships first or together and the dashboard gates the feature on its version check. Capture the required dashboard work in a `DASHBOARD-*.md` handoff (the dashboard is a separate repo with its own agent). See `heartbeat-dev` "GraphQL contract with the dashboard" for the compatibility mechanics.
+The GraphQL operations are a shared contract with `heartbeat-dashboard`. **Hard rule: the dashboard is always published before the module release goes out.**
+
+So whenever this release changed the shared contract in any way (added, removed, renamed, or re-signatured a GraphQL query/mutation, or changed the operation set), you MUST **stop and ask the user explicitly, before tagging: "is the matching dashboard change already published?"** Do not cut until they confirm it is. If they cannot confirm, wait for the dashboard.
+
+Do not reason the ordering out case by case at release time (removed vs added, module-first-is-technically-safe, etc.). The operational default is simply dashboard-already-live, because the dashboard's compatibility check errors when it expects an operation the shop lacks, and dashboard-first is safe in every case. This applies to additions too (e.g. a new kill-switch mutation the dashboard will call): the dashboard button must be live first.
+
+If the release did **not** touch the shared contract, this gate does not apply. Capture any required dashboard work in a `DASHBOARD-*.md` handoff (the dashboard is a separate repo with its own agent). See `heartbeat-dev` "GraphQL contract with the dashboard" for the underlying compatibility mechanics.
 
 ## After releasing
 
