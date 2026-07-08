@@ -1,12 +1,10 @@
 # OXS :: Heartbeat
 
-> **You are on branch `b-6.5.x`** (Heartbeat 1.x, for OXID eShop 6.5).
+> **You are on branch `b-6.5.x`** (for OXID eShop 6.5).
 >
 > Other supported lines:
-> * **OXID 7.0** → branch [`b-7.0.x`](https://github.com/oxid-support/heartbeat-module/tree/b-7.0.x) (Heartbeat 3.x)
-> * **OXID 7.1 to 7.5** → branch [`b-7.1.x`](https://github.com/oxid-support/heartbeat-module/tree/b-7.1.x) (Heartbeat 2.x)
->
-> Customers installing via `composer require oxid-support/heartbeat` get the matching version automatically; this switcher is for source browsing and contributors.
+> * **OXID 7.0** → branch [`b-7.0.x`](https://github.com/oxid-support/heartbeat-module/tree/b-7.0.x)
+> * **OXID 7.1 to 7.5** → branch [`b-7.1.x`](https://github.com/oxid-support/heartbeat-module/tree/b-7.1.x)
 
 **OXS Heartbeat** is an OXID eShop module that enables **remote monitoring and support** for OXID shops.
 
