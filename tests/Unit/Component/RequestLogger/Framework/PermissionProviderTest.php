@@ -40,14 +40,6 @@ final class PermissionProviderTest extends TestCase
         $this->assertArrayHasKey('oxsheartbeat_api', $permissions);
     }
 
-    public function testGetPermissionsContainsAdminGroup(): void
-    {
-        $provider = new PermissionProvider();
-        $permissions = $provider->getPermissions();
-
-        $this->assertArrayHasKey('oxidadmin', $permissions);
-    }
-
     public function testApiUserGroupHasViewPermission(): void
     {
         $provider = new PermissionProvider();
@@ -64,22 +56,6 @@ final class PermissionProviderTest extends TestCase
         $this->assertContains('REQUEST_LOGGER_CHANGE', $permissions['oxsheartbeat_api']);
     }
 
-    public function testAdminGroupHasViewPermission(): void
-    {
-        $provider = new PermissionProvider();
-        $permissions = $provider->getPermissions();
-
-        $this->assertContains('REQUEST_LOGGER_VIEW', $permissions['oxidadmin']);
-    }
-
-    public function testAdminGroupHasChangePermission(): void
-    {
-        $provider = new PermissionProvider();
-        $permissions = $provider->getPermissions();
-
-        $this->assertContains('REQUEST_LOGGER_CHANGE', $permissions['oxidadmin']);
-    }
-
     public function testApiUserGroupHasExactlyTwoPermissions(): void
     {
         $provider = new PermissionProvider();
@@ -88,33 +64,23 @@ final class PermissionProviderTest extends TestCase
         $this->assertCount(2, $permissions['oxsheartbeat_api']);
     }
 
-    public function testAdminGroupHasExactlyTwoPermissions(): void
+    /**
+     * Support-only: the shop admin group must not be granted these GraphQL rights.
+     * Admins configure via the backend UI, not the API (least privilege, OXS-3050).
+     */
+    public function testAdminGroupIsNotGranted(): void
     {
         $provider = new PermissionProvider();
         $permissions = $provider->getPermissions();
 
-        $this->assertCount(2, $permissions['oxidadmin']);
+        $this->assertArrayNotHasKey('oxidadmin', $permissions);
     }
 
-    public function testBothGroupsHaveSamePermissions(): void
+    public function testGetPermissionsReturnsOnlyApiUserGroup(): void
     {
         $provider = new PermissionProvider();
         $permissions = $provider->getPermissions();
 
-        $apiPermissions = $permissions['oxsheartbeat_api'];
-        $adminPermissions = $permissions['oxidadmin'];
-
-        sort($apiPermissions);
-        sort($adminPermissions);
-
-        $this->assertSame($apiPermissions, $adminPermissions);
-    }
-
-    public function testGetPermissionsReturnsOnlyTwoGroups(): void
-    {
-        $provider = new PermissionProvider();
-        $permissions = $provider->getPermissions();
-
-        $this->assertCount(2, $permissions);
+        $this->assertSame(['oxsheartbeat_api'], array_keys($permissions));
     }
 }

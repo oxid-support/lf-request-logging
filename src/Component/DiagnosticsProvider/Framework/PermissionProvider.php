@@ -15,13 +15,12 @@ final class PermissionProvider implements PermissionProviderInterface
 {
     public function getPermissions(): array
     {
+        // Dedicated diagnostics right, separate from LOG_SENDER_VIEW, so
+        // "read diagnostics" and "read logs" can be granted independently.
+        // Support-only: only oxsheartbeat_api over GraphQL. Shop admins use the backend UI,
+        // so oxidadmin is intentionally not mapped (least privilege, OXS-3050).
         return [
-            // Dedicated diagnostics right, separate from LOG_SENDER_VIEW, so
-            // "read diagnostics" and "read logs" can be granted independently.
             'oxsheartbeat_api' => [
-                'DIAGNOSTICS_VIEW',
-            ],
-            'oxidadmin' => [
                 'DIAGNOSTICS_VIEW',
             ],
         ];
