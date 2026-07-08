@@ -17,7 +17,7 @@ There is one full OXID installation per line under `workspace/`, each containing
 
 `workspace/oxid-74` and `oxid-75` exist but carry no module checkout; ignore them unless the user says otherwise.
 
-Module majors are assigned **chronologically across all lines**, not mapped to OXID majors. That is why 3.x is the OXID 7.0 line while 2.x is the OXID 7.1 line. Never "correct" this, and never derive the OXID target from the module major. Derive it from the branch name or the composer constraint. Full rationale: `docs/modul-versioning-strategie.md` in the workspace root (read it before touching tags, constraints, or release communication).
+Module majors are assigned **chronologically across all lines**, not mapped to OXID majors. That is why 3.x is the OXID 7.0 line while 2.x is the OXID 7.1 line. Never "correct" this, and never derive the OXID target from the module major. Derive it from the branch name or the composer constraint. The full versioning rationale and the release process live in the `heartbeat-release` skill.
 
 A branch is not pinned to a single OXID version; it covers a **range** that grows over time. `b-7.1.x` started at OXID 7.1 and today covers 7.1 to 7.5 because each compatible OXID release widened its upper bound. The branch name records where the line started, the composer constraint records what it currently covers. Always read the constraint, not the name, to know coverage.
 
@@ -105,4 +105,4 @@ This is a remote-access module; these recurring rules came out of a full securit
 * Never develop in `repo/oxs` or copy files from outside the three checkouts; the workspace root also contains an unrelated versioning test harness (`scenarios/`, `run-all.sh`, `fixtures/`).
 * The module is a remote support/monitoring tool. Anything exposed via GraphQL is customer-facing attack surface: default to shop-admin-only for settings that control logging, redaction, or data access, and question any change that widens remote access.
 * GraphQL operations are a shared contract with the dashboard: any add/remove/rename/signature change needs a parallel `heartbeat-dashboard` change and a rollout order. See "GraphQL contract with the dashboard".
-* Before recommending release or upgrade commands to customers, check the command variants in `docs/modul-versioning-strategie.md` instead of improvising composer invocations.
+* Before recommending upgrade commands to customers, use the variants in the module README's "Updating an existing installation" section instead of improvising composer invocations.
