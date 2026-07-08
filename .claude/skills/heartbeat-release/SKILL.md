@@ -43,9 +43,9 @@ Classify the change set for each line, then pick the number:
 
 * **PATCH** (e.g. 2.0.4 to 2.0.5): bug fix, doc, or widening the `oxideshop-ce` upper bound after a green compatibility test. Backward compatible.
 * **MINOR** (2.0.x to 2.1.0): new backward-compatible feature.
-* **MAJOR**: any BC break. This includes removing/renaming a released GraphQL operation, changing an operation's arguments, or a PHP-level BC break (removed/renamed public method, class, or interface member). A MAJOR does **not** take "line-major + 1"; it takes the **next free major across ALL lines** and gets a **codename**. Find the highest used major with `git tag | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1` (semver release tags only; ignore `backup/*` and other non-release tags).
+* **MAJOR**: any BC break. This includes removing/renaming a released GraphQL operation, changing an operation's arguments, or a PHP-level BC break (removed/renamed public method, class, or interface member). A MAJOR does **not** take "line-major + 1"; it takes the **next free major across ALL lines**. Find the highest used major with `git tag | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1` (semver release tags only; ignore `backup/*` and other non-release tags).
 
-When the **same BC break ships on several lines at once**, the lines do **not** share one number: each cut line consumes the **next consecutive global major, in cut order**, each with its own codename. Example: highest used major is 3 and all three lines break BC together, so the lines you cut become 4.0.0, 5.0.0, 6.0.0 (which line gets which number follows the order you cut, not the OXID version). A line's low own history (e.g. the 6.5 line still at 1.x) is irrelevant: the major is a repo-wide chronological marker, not a per-line counter, so a jump like 1.0.2 to 4.0.0 is correct and expected.
+When the **same BC break ships on several lines at once**, the lines do **not** share one number: each cut line consumes the **next consecutive global major, in cut order**. Example: highest used major is 3 and all three lines break BC together, so the lines you cut become 4.0.0, 5.0.0, 6.0.0 (which line gets which number follows the order you cut, not the OXID version). A line's low own history (e.g. the 6.5 line still at 1.x) is irrelevant: the major is a repo-wide chronological marker, not a per-line counter, so a jump like 1.0.2 to 4.0.0 is correct and expected.
 
 Determine BC honestly: a removal only breaks BC if the removed thing was in that line's **last released tag**. Verify against the tree, do not guess. Get the newest release tag with `git tag --merged <branch> | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1` (do **not** use plain `git describe --tags --abbrev=0`, it can return a `backup/*` tag), then `git grep -l '<symbol>' <tag> -- src`. If the symbol is present, removing it is a MAJOR even if no known client used it. Do not blindly tag the current `VERSION` constant: it may be a stale pre-planned **patch** bump (e.g. a `x.y.z+1` sitting in `Module.php`) that no longer reflects the accumulated `[Unreleased]` scope; reassess the whole `[Unreleased]` set and override the constant if the real classification is higher.
 
@@ -58,7 +58,7 @@ Work in that line's checkout under `workspace/oxid-*/source/_dev-modules/heartbe
 3. Verify the `oxid-esales/oxideshop-ce` constraint in `composer.json` states exactly the OXID range actually tested, with a **tight upper bound**. Never tag ahead of the constraint: the constraint in the tagged `composer.json` is what composer evaluates.
 4. Commit ("Release X.Y.Z"). Push the branch. Wait for CI green.
 5. Create an **annotated** tag `X.Y.Z` on the line branch and push it. Tags are global across the repo; use the number from the decision above, never reuse or renumber a published tag. Force-pushing a tag is emergency-only (constraint hotfix, see the 2.0.1/2.0.2 history) and needs explicit user approval.
-6. Create the GitHub release. Title carries codename + OXID target, e.g. `Heartbeat "Borealis" 5.0.0 (für OXID 7.1)`. Body states which OXID versions it covers and reminds other-version users that `composer require oxid-support/heartbeat` resolves the right version automatically.
+6. Create the GitHub release. Title carries version + OXID target, e.g. `Heartbeat 5.0.0 (für OXID 7.1)` (no codename scheme is in use, see the note below). Body states which OXID versions it covers and reminds other-version users that `composer require oxid-support/heartbeat` resolves the right version automatically.
 7. Packagist picks the tag up automatically, no manual publish step. Verify the version appears and `composer require oxid-support/heartbeat:X.Y.Z` resolves on a matching OXID.
 
 A cross-line release (same change on all lines) = repeat per line: separate version numbers, changelog sections, tags, GitHub releases. Finish one line completely before the next so a CI failure never leaves half-tagged state.
@@ -70,7 +70,11 @@ The GraphQL operations are a shared contract with `heartbeat-dashboard`. A relea
 ## After releasing
 
 * Honor the 2-week-window promise: after a new OXID version, ship a matching module release within 14 days (patch if compatible, new major if BC-broken).
-* Keep the communicative layer in sync where used: codename, README compatibility banner, auto-generated compatibility matrix.
+* Keep the communicative layer in sync where used: README compatibility banner, auto-generated compatibility matrix.
+
+## Codenames
+
+No codename scheme is in use (as of July 2026): releases are titled by version + OXID target only, matching every prior release (1.0.0, 3.0.0, ...). If codenames are introduced later, avoid Norse symbols the far right has co-opted (war gods like Odin/Thor/Tyr, runes, Valknut, Sonnenrad, Walhalla imagery); the healing/wisdom/messenger/bridge corner of Norse myth (e.g. Eir, Mímir, Ratatoskr, Bifröst) is both unappropriated and on-theme for a heartbeat/monitoring module.
 
 ## What this skill is not
 
