@@ -33,6 +33,20 @@ Releasing is out of scope here: choosing the version number, finalizing the chan
 
 Security relevant changes (auth, GraphQL exposure, redaction, API user) additionally require checking the tests under `tests/Unit/Component/RequestLogger/Security/` on every line; extend them rather than only the feature tests.
 
+## Comment deliberate decisions (with the ticket ref)
+
+When a line embodies a deliberate decision that is not evident from the code itself, leave a short inline comment stating the decision and pointing to the ticket. That comment is the only place the reasoning stays reliably visible: tickets sink into the backlog and commit messages are not read when someone later reviews that single line.
+
+Applies especially to: security/permission mapping (e.g. why `oxidadmin` is dropped from one provider but kept elsewhere), non-obvious visibility (private vs protected vs public), defensive defaults (`redact_all_values = true`), deliberately omitted functionality ("no cache here because ..."), workarounds for library/framework behaviour, counterintuitive performance choices, deliberate inconsistencies, and negative decisions ("Z would be plausible, deliberately not done because ...").
+
+Format: one or two lines, ticket ref at the end. Comment the WHY and the WHY-NOT-otherwise, never the WHAT (the code already says what). Example:
+
+```php
+// oxidadmin intentionally not mapped here, this is a support-only operation (OXS-3050)
+```
+
+Rule of thumb: if a reader in six months might think "this looks wrong, let me clean it up", add the comment that explains why the current form is intended.
+
 ## Per-line idioms (what actually differs)
 
 Same logic, different surrounding code. Knowing these up front saves porting mistakes:
