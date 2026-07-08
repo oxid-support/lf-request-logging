@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Security
-- **Breaking:** the shop admin group (`oxidadmin`) no longer has GraphQL access to the Request Logger, Log Sender and Diagnostics operations. These are support-only endpoints, called by the `oxsheartbeat_api` service user; admins configure via the backend UI, not the API. Customers who used their OXID admin user for remote settings/log/diagnostics queries lose that access (least privilege, OXS-3050).
+- Hardening: the shop admin group (`oxidadmin`) is no longer granted GraphQL access to the Request Logger, Log Sender and Diagnostics operations. These are support-only endpoints served to the `oxsheartbeat_api` service user; the admin-group grant was an unintended over-privilege, never part of the advertised API. Shop admins configure via the backend UI, not the API (OXS-3050).
 
 ## [6.0.0] - 2026-07-08
 
