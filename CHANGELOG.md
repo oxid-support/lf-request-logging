@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Edits to the service user in the OXID admin area (password, login email, active flag) terminate the sessions too.
 - GraphQL mutation `heartbeatInvalidateTokens` (callable by the service user) revokes all of the service user's JWTs, giving OXID Support a remote kill switch for a leaked token without resetting the password.
 - Integration tests no longer assume an empty `oegraphqltoken` baseline; they are stable on shops with existing API-user tokens.
+- README brought up to the current three-line branch structure: adds the branch switcher, corrects the OXID 7.0 line to Heartbeat 3.x and the default branch to `b-7.1.x`, and adds the OXID 7.1 to 7.5 line (Heartbeat 2.x).
 
 ### Added
 - Integration tests guarding the dashboard contract: `SchemaContractTest` pins `Module::SUPPORTED_OPERATIONS` to the actually built GraphQL schema (both directions), `HttpAuthorizationTest` verifies Bearer-token authentication over real HTTP and fails loudly when the web server drops the Authorization header (Apache `mod_proxy_fcgi` without `CGIPassAuth On`).
