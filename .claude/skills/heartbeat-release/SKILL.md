@@ -63,6 +63,18 @@ Work in that line's checkout under `workspace/oxid-*/source/_dev-modules/heartbe
 
 A cross-line release (same change on all lines) = repeat per line: separate version numbers, changelog sections, tags, GitHub releases. Finish one line completely before the next so a CI failure never leaves half-tagged state.
 
+## Keep the README and the VERSION constant in sync (do not skip)
+
+`HeartbeatModule::VERSION` in `src/Module/Module.php` is the single source of truth for a line's version. The README must follow it, never the reverse. Every line's README carries the full line map: a **banner** naming this line's major + OXID range, a **Compatibility** list (`Module X.x: OXID ...`), and a **Branch structure** list. Each README also cross-references the *other* lines. So a version-number change on one line means editing that line's entry in **all three branches' READMEs**, not only the changed line's own README. Miss one and the map contradicts itself. This already drifted: the `b-6.5.x` README still calls the 7.0 line "2.x", names `b-7.0.x` the default, and omits the 7.1 line entirely.
+
+Reconcile on every release, and verify before you tag:
+
+1. **Released line's own README** (banner, `Module X.x: OXID ...` line, `b-...` branch entry): all state the new major and the actual tested OXID range.
+2. **The other two branches' READMEs**: their cross-reference to the released line (major + range) matches.
+3. **Version reconciliation**: the major shown in each README must equal the major of that line's `HeartbeatModule::VERSION`. Check per branch: read the banner major and compare with `git grep -hoE "VERSION = '[^']+'" HEAD -- src/Module/Module.php`. They must agree. If they disagree, the constant wins and the README is wrong.
+4. When a **new major scheme jump** ships (e.g. a line moving 1.x to 4.x under the global-major rule), add a one-line note in the README explaining that majors are a repo-wide chronological sequence, so the jump does not read as arbitrary.
+5. No em/en dashes in the range text: write "7.1 to 7.5", per house style.
+
 ## Cross-repo coordination (dashboard)
 
 The GraphQL operations are a shared contract with `heartbeat-dashboard`. A release that changed the GraphQL surface must ship in the right order: a **removed/renamed** operation → the dashboard drops it first or together; an **added** operation the dashboard will call → the module ships first or together and the dashboard gates the feature on its version check. Capture the required dashboard work in a `DASHBOARD-*.md` handoff (the dashboard is a separate repo with its own agent). See `heartbeat-dev` "GraphQL contract with the dashboard" for the compatibility mechanics.
@@ -70,7 +82,7 @@ The GraphQL operations are a shared contract with `heartbeat-dashboard`. A relea
 ## After releasing
 
 * Honor the 2-week-window promise: after a new OXID version, ship a matching module release within 14 days (patch if compatible, new major if BC-broken).
-* Keep the communicative layer in sync where used: README compatibility banner, auto-generated compatibility matrix.
+* Keep the communicative layer in sync: the README banner/Compatibility/Branch-structure across all three branches (see "Keep the README and the VERSION constant in sync" above) and any auto-generated compatibility matrix.
 
 ## Codenames
 
