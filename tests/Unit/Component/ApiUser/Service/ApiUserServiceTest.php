@@ -99,19 +99,23 @@ final class ApiUserServiceTest extends TestCase
         $this->assertEquals('void', $returnType->getName());
     }
 
-    public function testConstructorRequiresDependencies(): void
+    public function testConstructorRequiresQueryBuilderFactoryTokenInvalidatorAndShopFacade(): void
     {
         $reflection = new \ReflectionClass(ApiUserService::class);
         $constructor = $reflection->getConstructor();
 
         $this->assertNotNull($constructor);
-        $this->assertCount(2, $constructor->getParameters());
+        $this->assertCount(3, $constructor->getParameters());
 
-        $this->assertEquals('queryBuilderFactory', $constructor->getParameters()[0]->getName());
-        $this->assertEquals('tokenInvalidator', $constructor->getParameters()[1]->getName());
+        $params = $constructor->getParameters();
+        $this->assertEquals('queryBuilderFactory', $params[0]->getName());
+        $this->assertEquals('tokenInvalidator', $params[1]->getName());
+        // ShopFacade scopes the api-user lookup to the current shop under EE
+        // mall-users-off (per-subshop service user). See OXS-3046.
+        $this->assertEquals('shopFacade', $params[2]->getName());
     }
 
-    public function testAllMethodsArePublic(): void
+    public function testAllPublicApiMethodsArePublic(): void
     {
         $reflection = new \ReflectionClass(ApiUserService::class);
         $methods = ['loadApiUser', 'resetPassword', 'setPasswordForApiUser', 'resetPasswordForApiUser'];
@@ -120,5 +124,23 @@ final class ApiUserServiceTest extends TestCase
             $method = $reflection->getMethod($methodName);
             $this->assertTrue($method->isPublic(), "Method $methodName should be public");
         }
+    }
+
+    public function testNoStandaloneInvalidateMethodOnApiUserService(): void
+    {
+        $reflection = new \ReflectionClass(ApiUserService::class);
+
+        // Token invalidation lives on TokenInvalidatorService and is delegated to
+        // from resetPasswordForApiUser(). It must not become a standalone method
+        // on ApiUserService, because that would let callers wipe tokens without
+        // resetting the password too. See OXS-3054.
+        $this->assertFalse(
+            $reflection->hasMethod('invalidateTokensForUser'),
+            'Token invalidation must not live on ApiUserService directly'
+        );
+        $this->assertFalse(
+            $reflection->hasMethod('invalidateApiUserTokens'),
+            'Token invalidation must not live on ApiUserService directly'
+        );
     }
 }
