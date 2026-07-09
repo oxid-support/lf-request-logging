@@ -11,9 +11,9 @@ namespace OxidSupport\Heartbeat\Component\RequestLogger\Core;
 
 use OxidEsales\Eshop\Core\Registry;
 use OxidEsales\EshopCommunity\Internal\Container\ContainerFactory;
-use OxidEsales\EshopCommunity\Internal\Framework\Database\QueryBuilderFactoryInterface;
 use OxidEsales\EshopCommunity\Internal\Framework\Module\Facade\ModuleSettingServiceInterface;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\ApiUserProvisioningServiceInterface;
+use OxidSupport\Heartbeat\Component\ApiUser\Service\ApiUserStatusServiceInterface;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\TokenGeneratorInterface;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\TokenInvalidatorInterface;
 use OxidSupport\Heartbeat\Module\Module;
@@ -57,7 +57,11 @@ final class ModuleEvents
             return;
         }
 
-        if (self::isPasswordAlreadySet($container)) {
+        // Shop-aware (mall users): with mall users off the service user is per
+        // subshop, so this must check THIS shop's row, not any row with the
+        // service-user name. A global check let a subshop skip token generation
+        // because another shop's password was already set. See OXS-3046.
+        if ($container->get(ApiUserStatusServiceInterface::class)->isApiUserPasswordSet()) {
             return;
         }
 
@@ -103,24 +107,5 @@ final class ModuleEvents
             glob($tmpDir . '/*.txt') ?: []
         );
         array_map('unlink', $files);
-    }
-
-    private static function isPasswordAlreadySet(\Psr\Container\ContainerInterface $container): bool
-    {
-        try {
-            $queryBuilderFactory = $container->get(QueryBuilderFactoryInterface::class);
-            $queryBuilder = $queryBuilderFactory->create();
-            $queryBuilder
-                ->select('OXPASSWORD')
-                ->from('oxuser')
-                ->where('OXUSERNAME = :email')
-                ->setParameter('email', Module::API_USER_EMAIL);
-
-            $password = $queryBuilder->execute()->fetchOne();
-
-            return $password && str_starts_with($password, '$');
-        } catch (\Throwable $e) {
-            return false;
-        }
     }
 }
