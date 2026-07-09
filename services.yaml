@@ -97,6 +97,10 @@ services:
     # Component: ApiUser - Services
     # ==========================================================================
 
+    OxidSupport\Heartbeat\Component\ApiUser\Service\ApiUserShopScopeInterface:
+        class: OxidSupport\Heartbeat\Component\ApiUser\Service\ApiUserShopScope
+        public: true
+
     OxidSupport\Heartbeat\Component\ApiUser\Service\ApiUserStatusServiceInterface:
         class: OxidSupport\Heartbeat\Component\ApiUser\Service\ApiUserStatusService
         public: true

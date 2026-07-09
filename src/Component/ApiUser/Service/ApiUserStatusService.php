@@ -9,26 +9,23 @@ declare(strict_types=1);
 
 namespace OxidSupport\Heartbeat\Component\ApiUser\Service;
 
-use Doctrine\DBAL\Query\QueryBuilder;
 use OxidEsales\EshopCommunity\Internal\Framework\Database\QueryBuilderFactoryInterface;
 use OxidSupport\Heartbeat\Module\Module;
-use OxidSupport\Heartbeat\Shop\Facade\ShopFacadeInterface;
 
 /**
  * Service to check the setup status of the API user.
  * Checks actual database state rather than assuming based on module activation.
  *
- * Shop-scope aware, consistent with ApiUserProvisioningService: with mall users
- * off the service user is per subshop, so the status must reflect the CURRENT
- * shop's row, not any row with that username. Otherwise a subshop would report
- * "setup complete" off another shop's password. With mall users on the single
- * shared row is authoritative for every shop. See OXS-3046.
+ * Shop-scope aware via ApiUserShopScope, consistent with the other api-user
+ * services: with mall users off the service user is per subshop, so the status
+ * must reflect the CURRENT shop's row, not any row with that username. See
+ * OXS-3046.
  */
 final class ApiUserStatusService implements ApiUserStatusServiceInterface
 {
     public function __construct(
         private QueryBuilderFactoryInterface $queryBuilderFactory,
-        private ShopFacadeInterface $shopFacade,
+        private ApiUserShopScopeInterface $apiUserShopScope,
     ) {
     }
 
@@ -41,7 +38,7 @@ final class ApiUserStatusService implements ApiUserStatusServiceInterface
                 ->from('oxuser')
                 ->where('OXUSERNAME = :email')
                 ->setParameter('email', Module::API_USER_EMAIL);
-            $this->scopeToCurrentShop($queryBuilder);
+            $this->apiUserShopScope->restrictToCurrentShop($queryBuilder);
 
             return (int) $queryBuilder->execute()->fetchOne() > 0; // @phpstan-ignore method.nonObject
         } catch (\Exception) {
@@ -58,7 +55,7 @@ final class ApiUserStatusService implements ApiUserStatusServiceInterface
                 ->from('oxuser')
                 ->where('OXUSERNAME = :email')
                 ->setParameter('email', Module::API_USER_EMAIL);
-            $this->scopeToCurrentShop($queryBuilder);
+            $this->apiUserShopScope->restrictToCurrentShop($queryBuilder);
 
             $row = $queryBuilder->execute()->fetchAssociative(); // @phpstan-ignore method.nonObject
 
@@ -82,19 +79,5 @@ final class ApiUserStatusService implements ApiUserStatusServiceInterface
         // seeded-state signal; there is no separate migration step. See OXS-3046.
         return $this->isApiUserCreated()
             && $this->isApiUserPasswordSet();
-    }
-
-    /**
-     * Constrain a `oxuser` lookup to the current shop when mall users are off
-     * (users are per subshop then). With mall users on the single shared row
-     * applies to every shop, so no constraint is added. See OXS-3046.
-     */
-    private function scopeToCurrentShop(QueryBuilder $queryBuilder): void
-    {
-        if (!$this->shopFacade->areMallUsersEnabled()) {
-            $queryBuilder
-                ->andWhere('OXSHOPID = :shopId')
-                ->setParameter('shopId', $this->shopFacade->getShopId());
-        }
     }
 }
