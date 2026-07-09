@@ -1,4 +1,0 @@
-name: Heartbeat Module Migrations
-migrations_namespace: OxidSupport\Heartbeat\Migrations
-table_name: oxmigrations_oxsheartbeat
-migrations_directory: data

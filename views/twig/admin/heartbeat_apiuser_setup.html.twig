@@ -5,7 +5,6 @@
 
 {% block body %}
 {% set setupToken = oView.getSetupToken() %}
-{% set migrationExecuted = oView.isMigrationExecuted() %}
 {% set moduleActivated = oView.isHeartbeatModuleActivated() %}
 {% set graphqlBaseActivated = oView.isGraphqlBaseActivated() %}
 {% set apiUserCreated = oView.isApiUserCreated() %}
@@ -37,38 +36,22 @@
                 {% endif %}
             </li>
 
-            {# Step 2: Heartbeat module installed & activated #}
+            {# Step 2: Heartbeat module installed & activated. Activation creates
+               the api user, its group and the group membership. See OXS-3046. #}
             <li class="{{ moduleActivated ? 'done' : (graphqlBaseActivated ? 'active' : 'pending') }}">
                 {{ translate({ ident: "OXSHEARTBEAT_APIUSER_STEP_ACTIVATE" }) }}
             </li>
 
-            {# Step 3: Run migrations #}
-            {% if not migrationExecuted %}
-            <li class="{{ (graphqlBaseActivated and moduleActivated) ? 'active' : 'pending' }}">
-                {{ translate({ ident: "OXSHEARTBEAT_APIUSER_STEP_MIGRATE" }) }}
-                {% if graphqlBaseActivated and moduleActivated %}<br>
-                <small style="font-weight: normal;">{{ translate({ ident: "OXSHEARTBEAT_APIUSER_MIGRATION_REQUIRED_TEXT" }) }}</small><br>
-                {{ lf.copy_code(
-                    "./vendor/bin/oe-eshop-doctrine_migration migrations:migrate oxsheartbeat",
-                    "migration",
-                    "OXSHEARTBEAT_APIUSER_COPIED"
-                ) }}
-                {% endif %}
-            </li>
-            {% else %}
-            <li class="done">{{ translate({ ident: "OXSHEARTBEAT_APIUSER_STEP_MIGRATE" }) }}</li>
-            {% endif %}
-
-            {# Step 4: Send token #}
-            <li class="{{ (migrationExecuted and graphqlBaseActivated and setupToken != '') ? 'active' : (apiUserPasswordSet ? 'done' : 'pending') }}">
+            {# Step 3: Send token #}
+            <li class="{{ (moduleActivated and graphqlBaseActivated and setupToken != '') ? 'active' : (apiUserPasswordSet ? 'done' : 'pending') }}">
                 {{ translate({ ident: "OXSHEARTBEAT_APIUSER_STEP_SEND_TOKEN" }) }}
-                {% if migrationExecuted and graphqlBaseActivated and setupToken != '' and not apiUserPasswordSet %}<br>
+                {% if moduleActivated and graphqlBaseActivated and setupToken != '' and not apiUserPasswordSet %}<br>
                 <small style="font-weight: normal;">{{ translate({ ident: "OXSHEARTBEAT_APIUSER_STEP_SEND_TOKEN_DESC" }) }}</small><br>
                 {{ lf.copy_code(setupToken, "token", "OXSHEARTBEAT_APIUSER_COPIED") }}
                 {% endif %}
             </li>
 
-            {# Step 5: Wait for access #}
+            {# Step 4: Wait for access #}
             <li class="{{ apiUserPasswordSet ? 'done' : 'pending' }}">{{ translate({ ident: "OXSHEARTBEAT_APIUSER_STEP_WAIT_SUPPORT" }) }}</li>
         </ol>
         {% if not graphqlBaseActivated %}

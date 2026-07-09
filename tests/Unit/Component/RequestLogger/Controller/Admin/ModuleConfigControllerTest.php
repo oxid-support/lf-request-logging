@@ -25,9 +25,8 @@ final class ModuleConfigControllerTest extends TestCase
      * 1. ContainerFactory::getInstance() - static factory method
      * 2. ContextInterface - requires shop context
      * 3. ShopConfigurationDaoInterface - requires database access
-     * 4. SetupStatusServiceInterface - requires migrations table access
-     * 5. Extends ModuleConfiguration - OXID admin base class
-     * 6. getEditObjectId() - requires admin request context
+     * 4. Extends ModuleConfiguration - OXID admin base class
+     * 5. getEditObjectId() - requires admin request context
      *
      * These dependencies make the controller difficult to unit test without the full OXID framework.
      * Integration or acceptance tests should cover this functionality.
@@ -38,14 +37,6 @@ final class ModuleConfigControllerTest extends TestCase
 
         $controller = new ModuleConfigController();
         $controller->isModuleActivated();
-    }
-
-    public function testIsMigrationExecutedRequiresOxidFramework(): void
-    {
-        $this->expectException(\Error::class);
-
-        $controller = new ModuleConfigController();
-        $controller->isMigrationExecuted();
     }
 
     /**
@@ -67,25 +58,6 @@ final class ModuleConfigControllerTest extends TestCase
         );
     }
 
-    /**
-     * This test documents the expected behavior of isMigrationExecuted():
-     *
-     * 1. Checks if current module ID matches MODULE_ID
-     * 2. Retrieves SetupStatusService from container
-     * 3. Returns migration execution status
-     * 4. Returns true if module ID doesn't match (no check needed)
-     * 5. Returns false if any exception occurs
-     *
-     * This behavior should be verified in integration/acceptance tests.
-     */
-    public function testIsMigrationExecutedExpectedBehaviorDocumentation(): void
-    {
-        $this->assertTrue(
-            method_exists(ModuleConfigController::class, 'isMigrationExecuted'),
-            'ModuleConfigController should have isMigrationExecuted method'
-        );
-    }
-
     public function testIsModuleActivatedReturnsBoolean(): void
     {
         $reflection = new \ReflectionClass(ModuleConfigController::class);
@@ -96,30 +68,12 @@ final class ModuleConfigControllerTest extends TestCase
         $this->assertEquals('bool', $returnType->getName(), 'isModuleActivated should return bool');
     }
 
-    public function testIsMigrationExecutedReturnsBoolean(): void
-    {
-        $reflection = new \ReflectionClass(ModuleConfigController::class);
-        $method = $reflection->getMethod('isMigrationExecuted');
-
-        $returnType = $method->getReturnType();
-        $this->assertNotNull($returnType, 'isMigrationExecuted should have return type');
-        $this->assertEquals('bool', $returnType->getName(), 'isMigrationExecuted should return bool');
-    }
-
     public function testIsModuleActivatedIsPublic(): void
     {
         $reflection = new \ReflectionClass(ModuleConfigController::class);
         $method = $reflection->getMethod('isModuleActivated');
 
         $this->assertTrue($method->isPublic(), 'isModuleActivated should be public');
-    }
-
-    public function testIsMigrationExecutedIsPublic(): void
-    {
-        $reflection = new \ReflectionClass(ModuleConfigController::class);
-        $method = $reflection->getMethod('isMigrationExecuted');
-
-        $this->assertTrue($method->isPublic(), 'isMigrationExecuted should be public');
     }
 
     public function testExtendsModuleConfiguration(): void

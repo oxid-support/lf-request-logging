@@ -19,10 +19,6 @@
         .workflow-steps li.warning { color: #e65100; }
         .setup-complete { padding: 15px; background: #e8f5e9; border: 1px solid #4caf50; border-radius: 4px; margin-bottom: 20px; }
         .setup-complete h3 { color: #2e7d32; margin: 0 0 5px 0; }
-        .migration-warning { padding: 15px; background: #fff3e0; border: 1px solid #ff9800; border-radius: 4px; margin-bottom: 20px; }
-        .migration-warning h3 { color: #e65100; margin: 0 0 10px 0; }
-        .migration-warning p { margin: 0 0 10px 0; }
-        .migration-warning code { background: #f5f5f5; padding: 10px; display: block; border-radius: 4px; font-size: 12px; }
         .api-reset-section { margin-top: 20px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; }
         .api-reset-section summary { padding: 15px; cursor: pointer; list-style: none; }
         .api-reset-section summary::-webkit-details-marker { display: none; }
@@ -36,42 +32,13 @@
     </style>
 
     {% set setupToken = confstrs['oxsheartbeat_SetupToken']|default('') %}
-    {% set migrationExecuted = oView.isMigrationExecuted() %}
-    {% set moduleActivated = oView.isModuleActivated() %}
     {% set graphqlBaseActivated = oView.isGraphqlBaseActivated() %}
     {% set configAccessActivated = oView.isConfigAccessActivated() %}
 
-    {# Check actual setup status #}
-    {% if not migrationExecuted %}
-        {# Migration not executed - show in workflow #}
-        <div class="setup-workflow">
-            <h3>{{ translate({ ident: "OXSHEARTBEAT_APIUSER_SETUP_TITLE" }) }}</h3>
-            <ol class="workflow-steps">
-                <li class="done">{{ translate({ ident: "OXSHEARTBEAT_APIUSER_STEP_INSTALL" }) }}</li>
-                <li class="active">
-                    {{ translate({ ident: "OXSHEARTBEAT_APIUSER_STEP_MIGRATE" }) }}<br>
-                    <small style="font-weight: normal;">{{ translate({ ident: "OXSHEARTBEAT_APIUSER_MIGRATION_REQUIRED_TEXT" }) }}</small><br>
-                    <code id="migrationCommand" style="display: inline-block; background: #e3f2fd; padding: 8px 12px; border-radius: 4px; margin-top: 8px; font-size: 11px; cursor: pointer; border: 1px solid #2196f3;" onclick="
-                        var textarea = document.createElement('textarea');
-                        textarea.value = './vendor/bin/oe-eshop-doctrine_migration migrations:migrate oxsheartbeat';
-                        document.body.appendChild(textarea);
-                        textarea.select();
-                        document.execCommand('copy');
-                        document.body.removeChild(textarea);
-                        var msg = document.getElementById('migrationCopiedMsg');
-                        msg.style.display = 'inline';
-                        setTimeout(function() { msg.style.display = 'none'; }, 2000);
-                    ">&#x1F4D1; ./vendor/bin/oe-eshop-doctrine_migration migrations:migrate oxsheartbeat</code>
-                    <span id="migrationCopiedMsg" style="display: none; color: #4caf50; font-weight: bold; margin-left: 10px;">&#10004; {{ translate({ ident: "OXSHEARTBEAT_APIUSER_COPIED" }) }}</span>
-                </li>
-                <li class="{{ graphqlBaseActivated ? 'done' : 'pending' }}">{{ translate({ ident: "OXSHEARTBEAT_APIUSER_STEP_GRAPHQL_BASE" }) }}</li>
-                <li class="{{ configAccessActivated ? 'done' : (graphqlBaseActivated ? 'pending' : 'pending') }}">{{ translate({ ident: "OXSHEARTBEAT_APIUSER_STEP_CONFIG_ACCESS" }) }}</li>
-                <li class="{{ moduleActivated ? 'warning' : 'pending' }}">{{ translate({ ident: "OXSHEARTBEAT_APIUSER_STEP_ACTIVATE" }) }}{% if moduleActivated %}<br><small style="font-weight: normal;">{{ translate({ ident: "OXSHEARTBEAT_APIUSER_STEP_ACTIVATE_WARNING" }) }}</small>{% endif %}</li>
-                <li class="pending">{{ translate({ ident: "OXSHEARTBEAT_APIUSER_STEP_SEND_TOKEN" }) }}</li>
-                <li class="pending">{{ translate({ ident: "OXSHEARTBEAT_APIUSER_STEP_WAIT_SUPPORT" }) }}</li>
-            </ol>
-        </div>
-    {% elseif setupToken == '' %}
+    {# The api user is created on module activation (OXS-3046); there is no
+       migration step. Setup status is driven by the setup token: an empty token
+       means support has consumed it and setup is complete. #}
+    {% if setupToken == '' %}
         {# No token = Setup complete (token was consumed by support) #}
         <div class="setup-complete">
             <h3>&#10004; {{ translate({ ident: "OXSHEARTBEAT_APIUSER_SETUP_COMPLETE_TITLE" }) }}</h3>
@@ -83,7 +50,6 @@
             <h3>{{ translate({ ident: "OXSHEARTBEAT_APIUSER_SETUP_TITLE" }) }}</h3>
             <ol class="workflow-steps">
                 <li class="done">{{ translate({ ident: "OXSHEARTBEAT_APIUSER_STEP_INSTALL" }) }}</li>
-                <li class="done">{{ translate({ ident: "OXSHEARTBEAT_APIUSER_STEP_MIGRATE" }) }}</li>
                 <li class="{{ graphqlBaseActivated ? 'done' : 'active' }}">
                     {{ translate({ ident: "OXSHEARTBEAT_APIUSER_STEP_GRAPHQL_BASE" }) }}
                     {% if not graphqlBaseActivated %}<br>

@@ -67,13 +67,6 @@ final class SetupControllerTest extends TestCase
         $this->assertTrue($reflection->hasMethod('isGraphqlBaseActivated'));
     }
 
-    public function testIsMigrationExecutedMethodExists(): void
-    {
-        $reflection = new \ReflectionClass(SetupController::class);
-
-        $this->assertTrue($reflection->hasMethod('isMigrationExecuted'));
-    }
-
     public function testIsApiUserCreatedMethodExists(): void
     {
         $reflection = new \ReflectionClass(SetupController::class);
@@ -117,7 +110,6 @@ final class SetupControllerTest extends TestCase
             'isComponentActive',
             'isHeartbeatModuleActivated',
             'isGraphqlBaseActivated',
-            'isMigrationExecuted',
             'isApiUserCreated',
             'isApiUserPasswordSet',
             'isSetupComplete',

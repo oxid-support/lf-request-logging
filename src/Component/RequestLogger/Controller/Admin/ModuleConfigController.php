@@ -10,14 +10,10 @@ declare(strict_types=1);
 namespace OxidSupport\Heartbeat\Component\RequestLogger\Controller\Admin;
 
 use OxidEsales\Eshop\Application\Controller\Admin\ModuleConfiguration;
-use OxidEsales\EshopCommunity\Internal\Container\ContainerFactory;
 use OxidSupport\Heartbeat\Module\Module;
-use OxidSupport\Heartbeat\Component\RequestLogger\Service\Remote\SetupStatusServiceInterface;
 
 class ModuleConfigController extends ModuleConfiguration
 {
-    private ?SetupStatusServiceInterface $setupStatusService = null;
-
     private const GRAPHQL_BASE_MODULE_ID = 'oe_graphql_base';
     private const CONFIG_ACCESS_MODULE_ID = 'oe_graphql_configuration_access';
 
@@ -52,31 +48,8 @@ class ModuleConfigController extends ModuleConfiguration
         }
     }
 
-    public function isMigrationExecuted(): bool
-    {
-        if ($this->getCurrentModuleId() !== Module::ID) {
-            return true;
-        }
-
-        try {
-            return $this->getSetupStatusService()->isMigrationExecuted();
-        } catch (\Exception $e) {
-            return false;
-        }
-    }
-
     protected function getCurrentModuleId(): string
     {
         return $this->getEditObjectId();
-    }
-
-    private function getSetupStatusService(): SetupStatusServiceInterface
-    {
-        if ($this->setupStatusService === null) {
-            $this->setupStatusService = ContainerFactory::getInstance()
-                ->getContainer()
-                ->get(SetupStatusServiceInterface::class);
-        }
-        return $this->setupStatusService; // @phpstan-ignore return.type
     }
 }

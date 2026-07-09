@@ -47,8 +47,11 @@ composer require oxid-support/heartbeat:dev-b-6.5.x
 
 ```bash
 ./vendor/bin/oe-eshop-db_migrate migrations:migrate oe_graphql_base
-./vendor/bin/oe-eshop-db_migrate migrations:migrate oxsheartbeat
 ```
+
+> **Note**: The Heartbeat module ships no migrations. The API service user, its
+> group and the group membership are created automatically when you activate the
+> module (in the current shop context).
 
 ### Step 3: Clear Shop Cache
 
@@ -108,7 +111,6 @@ composer update oxid-support/heartbeat
 Then refresh the shop:
 
 ```bash
-./vendor/bin/oe-eshop-db_migrate migrations:migrate oxsheartbeat
 ./vendor/bin/oe-console oe:cache:clear
 ./vendor/bin/oe-console oe:module:deactivate oxsheartbeat
 ./vendor/bin/oe-console oe:module:activate oxsheartbeat
@@ -222,8 +224,8 @@ Navigate to: **OXS :: Heartbeat → API User → Setup**
 
 The API User is required for all components that need remote access. Follow the setup workflow:
 
-1. **Migrations**: Ensure database migrations are executed
-2. **GraphQL Base**: Ensure GraphQL Base module is activated
+1. **GraphQL Base**: Ensure GraphQL Base module is activated
+2. **Module activation**: Activating Heartbeat creates the API service user automatically
 3. **Setup Token**: Copy the setup token and send it to OXID Support
 4. **Activation**: Wait for OXID Support to set the API password
 

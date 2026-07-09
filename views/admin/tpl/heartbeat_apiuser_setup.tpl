@@ -1,7 +1,6 @@
 [{include file="headitem.tpl" title="GENERAL_ADMIN_TITLE"|oxmultilangassign}]
 
 [{assign var="setupToken" value=$oView->getSetupToken()}]
-[{assign var="migrationExecuted" value=$oView->isMigrationExecuted()}]
 [{assign var="moduleActivated" value=$oView->isHeartbeatModuleActivated()}]
 [{assign var="graphqlBaseActivated" value=$oView->isGraphqlBaseActivated()}]
 [{assign var="apiUserCreated" value=$oView->isApiUserCreated()}]
@@ -37,39 +36,16 @@
                 [{/if}]
             </li>
 
-            [{* Step 2: Heartbeat module installed & activated *}]
+            [{* Step 2: Heartbeat module installed & activated. Activation creates
+               the api user, its group and the group membership. See OXS-3046. *}]
             <li class="[{if $moduleActivated}]done[{elseif $graphqlBaseActivated}]active[{else}]pending[{/if}]">
                 [{oxmultilang ident="OXSHEARTBEAT_APIUSER_STEP_ACTIVATE"}]
             </li>
 
-            [{* Step 3: Run migrations *}]
-            [{if !$migrationExecuted}]
-            <li class="[{if $graphqlBaseActivated && $moduleActivated}]active[{else}]pending[{/if}]">
-                [{oxmultilang ident="OXSHEARTBEAT_APIUSER_STEP_MIGRATE"}]
-                [{if $graphqlBaseActivated && $moduleActivated}]<br>
-                <small style="font-weight: normal;">[{oxmultilang ident="OXSHEARTBEAT_APIUSER_MIGRATION_REQUIRED_TEXT"}]</small><br>
-                <code id="migrationCode" class="copy-code" onclick="
-                    var textarea = document.createElement('textarea');
-                    textarea.value = './vendor/bin/oe-eshop-doctrine_migration migrations:migrate oxsheartbeat';
-                    document.body.appendChild(textarea);
-                    textarea.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(textarea);
-                    var msg = document.getElementById('migrationMsg');
-                    msg.style.display = 'inline';
-                    setTimeout(function() { msg.style.display = 'none'; }, 2000);
-                ">&#x1F4D1; ./vendor/bin/oe-eshop-doctrine_migration migrations:migrate oxsheartbeat</code>
-                <span id="migrationMsg" class="copied-msg">&#10004; [{oxmultilang ident="OXSHEARTBEAT_APIUSER_COPIED"}]</span>
-                [{/if}]
-            </li>
-            [{else}]
-            <li class="done">[{oxmultilang ident="OXSHEARTBEAT_APIUSER_STEP_MIGRATE"}]</li>
-            [{/if}]
-
-            [{* Step 4: Send token *}]
-            <li class="[{if $migrationExecuted && $graphqlBaseActivated && $setupToken != ''}]active[{elseif $apiUserPasswordSet}]done[{else}]pending[{/if}]">
+            [{* Step 3: Send token *}]
+            <li class="[{if $moduleActivated && $graphqlBaseActivated && $setupToken != ''}]active[{elseif $apiUserPasswordSet}]done[{else}]pending[{/if}]">
                 [{oxmultilang ident="OXSHEARTBEAT_APIUSER_STEP_SEND_TOKEN"}]
-                [{if $migrationExecuted && $graphqlBaseActivated && $setupToken != '' && !$apiUserPasswordSet}]<br>
+                [{if $moduleActivated && $graphqlBaseActivated && $setupToken != '' && !$apiUserPasswordSet}]<br>
                 <small style="font-weight: normal;">[{oxmultilang ident="OXSHEARTBEAT_APIUSER_STEP_SEND_TOKEN_DESC"}]</small><br>
                 <code id="tokenCode" class="copy-code" onclick="
                     var textarea = document.createElement('textarea');
@@ -86,7 +62,7 @@
                 [{/if}]
             </li>
 
-            [{* Step 5: Wait for access *}]
+            [{* Step 4: Wait for access *}]
             <li class="[{if $apiUserPasswordSet}]done[{else}]pending[{/if}]">[{oxmultilang ident="OXSHEARTBEAT_APIUSER_STEP_WAIT_SUPPORT"}]</li>
         </ol>
         [{if !$graphqlBaseActivated}]
