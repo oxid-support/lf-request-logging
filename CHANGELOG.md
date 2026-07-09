@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- The API service user, its group and the group membership are now created on module activation in the current shop context, instead of by a database migration. The migration hardcoded the service user's `OXSHOPID = 1`; on EE with mall users off, a user pinned to shop 1 cannot authenticate on another subshop. The user is now created with the activating shop's id, and record ids come from the shop's id generator instead of a hand-rolled `md5()`. Provisioning is idempotent and runs on every activation, and is mall-user aware for EE multishop: with `blMallUsers` on a single shared service user is reused across subshops, with it off a service user is created per subshop (matching the `(OXUSERNAME, OXSHOPID)` uniqueness). End-to-end verification against a real EE multishop is tracked in OXS-3103. (OXS-3046)
+
+### Removed
+- The module's database migration (`Version20251223000001`) and the "migration executed" setup step and status check. The module no longer ships migrations; there is nothing to run before activation. (OXS-3046)
+
 ### Security
 - Hardening: the shop admin group (`oxidadmin`) is no longer granted GraphQL access to the Request Logger, Log Sender and Diagnostics operations. These are support-only endpoints served to the `oxsheartbeat_api` service user; the admin-group grant was an unintended over-privilege, never part of the advertised API. Shop admins configure via the backend UI, not the API (OXS-3050).
 

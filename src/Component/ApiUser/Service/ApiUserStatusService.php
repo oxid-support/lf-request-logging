@@ -18,30 +18,9 @@ use OxidSupport\Heartbeat\Module\Module;
  */
 final class ApiUserStatusService implements ApiUserStatusServiceInterface
 {
-    private const MIGRATION_TABLE = 'oxmigrations_oxsheartbeat';
-    private const EXPECTED_MIGRATION = 'OxidSupport\\Heartbeat\\Migrations\\Version20251223000001';
-
     public function __construct(
         private readonly QueryBuilderFactoryInterface $queryBuilderFactory
     ) {
-    }
-
-    public function isMigrationExecuted(): bool
-    {
-        try {
-            $queryBuilder = $this->queryBuilderFactory->create();
-            $result = $queryBuilder
-                ->select('COUNT(*)')
-                ->from(self::MIGRATION_TABLE)
-                ->where('version = :version')
-                ->setParameter('version', self::EXPECTED_MIGRATION)
-                ->execute();
-
-            return (int) $result->fetchOne() > 0; // @phpstan-ignore method.nonObject
-        } catch (\Exception) {
-            // Table doesn't exist or other error - migration not executed
-            return false;
-        }
     }
 
     public function isApiUserCreated(): bool
@@ -90,8 +69,9 @@ final class ApiUserStatusService implements ApiUserStatusServiceInterface
 
     public function isSetupComplete(): bool
     {
-        return $this->isMigrationExecuted()
-            && $this->isApiUserCreated()
+        // The api user is created on module activation, so its existence is the
+        // seeded-state signal; there is no separate migration step. See OXS-3046.
+        return $this->isApiUserCreated()
             && $this->isApiUserPasswordSet();
     }
 }

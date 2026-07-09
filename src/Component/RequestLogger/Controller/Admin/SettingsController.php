@@ -57,7 +57,7 @@ class SettingsController extends AbstractComponentController implements Togglabl
     }
 
     /**
-     * Check if the API User setup is complete (migration done + password set).
+     * Check if the API User setup is complete (api user created + password set).
      */
     public function isApiUserSetupComplete(): bool
     {

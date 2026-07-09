@@ -13,6 +13,7 @@ use OxidEsales\Eshop\Core\Registry;
 use OxidEsales\EshopCommunity\Internal\Container\ContainerFactory;
 use OxidEsales\EshopCommunity\Internal\Framework\Database\QueryBuilderFactoryInterface;
 use OxidEsales\EshopCommunity\Internal\Framework\Module\Facade\ModuleSettingServiceInterface;
+use OxidSupport\Heartbeat\Component\ApiUser\Service\ApiUserProvisioningServiceInterface;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\TokenGeneratorInterface;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\TokenInvalidatorInterface;
 use OxidSupport\Heartbeat\Module\Module;
@@ -29,16 +30,21 @@ final class ModuleEvents
      */
     public static function onActivate(): void
     {
-        // Module activation intentionally does NOT run database migrations.
-        // The shop operator runs them as an explicit step before activation
-        // (`oe-eshop-doctrine_migration migrations:migrate oxsheartbeat`).
-        // Activation should stay fast, idempotent and side-effect-free, plus
-        // CI/deployment pipelines already treat migrations as a separate step.
-        // See OXS-3066.
+        // Module activation intentionally does NOT run database migrations
+        // (schema is an operator/pipeline concern, see OXS-3066). The module
+        // ships no migrations anymore; the api user, its group and the group
+        // membership are seeded below in the current shop context. See OXS-3046.
         self::regenerateViews();
         self::clearCache();
 
         $container = ContainerFactory::getInstance()->getContainer();
+
+        // Create the api group, the service user and the group membership for
+        // the current shop. Idempotent, runs on every activation, and replaces
+        // the former data-seeding migration. This is the single creation path;
+        // there is no migration to run first. See OXS-3046.
+        $container->get(ApiUserProvisioningServiceInterface::class)->ensureApiUser();
+
         $moduleSettingService = $container->get(ModuleSettingServiceInterface::class);
 
         try {
