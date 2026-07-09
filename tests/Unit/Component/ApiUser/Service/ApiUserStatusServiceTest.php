@@ -14,6 +14,7 @@ use Doctrine\DBAL\Result;
 use OxidEsales\EshopCommunity\Internal\Framework\Database\QueryBuilderFactoryInterface;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\ApiUserStatusService;
 use OxidSupport\Heartbeat\Module\Module;
+use OxidSupport\Heartbeat\Shop\Facade\ShopFacadeInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
@@ -252,11 +253,107 @@ final class ApiUserStatusServiceTest extends TestCase
         $this->assertFalse($result);
     }
 
+    // ===========================================
+    // shop scoping (mall users) tests
+    //
+    // With mall users off the service user is per subshop, so the status lookup
+    // must be constrained to the current shop; otherwise a subshop reads another
+    // shop's row. With mall users on the single shared row applies. See OXS-3046.
+    // ===========================================
+
+    public function testCreatedCheckIsScopedToCurrentShopWhenMallUsersDisabled(): void
+    {
+        $result = $this->createMock(Result::class);
+        $result->method('fetchOne')->willReturn('1');
+
+        $queryBuilder = $this->createMock(QueryBuilder::class);
+        $queryBuilder->method('select')->willReturnSelf();
+        $queryBuilder->method('from')->willReturnSelf();
+        $queryBuilder->method('where')->willReturnSelf();
+        $queryBuilder->method('setParameter')->willReturnSelf();
+        $queryBuilder->expects($this->once())
+            ->method('andWhere')->with('OXSHOPID = :shopId')->willReturnSelf();
+        $queryBuilder->method('execute')->willReturn($result);
+
+        $queryBuilderFactory = $this->createMock(QueryBuilderFactoryInterface::class);
+        $queryBuilderFactory->method('create')->willReturn($queryBuilder);
+
+        $shopFacade = $this->createStub(ShopFacadeInterface::class);
+        $shopFacade->method('areMallUsersEnabled')->willReturn(false);
+        $shopFacade->method('getShopId')->willReturn(2);
+
+        $this->assertTrue(
+            $this->getSut(queryBuilderFactory: $queryBuilderFactory, shopFacade: $shopFacade)->isApiUserCreated()
+        );
+    }
+
+    public function testCreatedCheckIsGlobalWhenMallUsersEnabled(): void
+    {
+        $result = $this->createMock(Result::class);
+        $result->method('fetchOne')->willReturn('1');
+
+        $queryBuilder = $this->createMock(QueryBuilder::class);
+        $queryBuilder->method('select')->willReturnSelf();
+        $queryBuilder->method('from')->willReturnSelf();
+        $queryBuilder->method('where')->willReturnSelf();
+        $queryBuilder->method('setParameter')->willReturnSelf();
+        $queryBuilder->expects($this->never())->method('andWhere');
+        $queryBuilder->method('execute')->willReturn($result);
+
+        $queryBuilderFactory = $this->createMock(QueryBuilderFactoryInterface::class);
+        $queryBuilderFactory->method('create')->willReturn($queryBuilder);
+
+        $shopFacade = $this->createStub(ShopFacadeInterface::class);
+        $shopFacade->method('areMallUsersEnabled')->willReturn(true);
+
+        $this->assertTrue(
+            $this->getSut(queryBuilderFactory: $queryBuilderFactory, shopFacade: $shopFacade)->isApiUserCreated()
+        );
+    }
+
+    public function testPasswordCheckIsScopedToCurrentShopWhenMallUsersDisabled(): void
+    {
+        // The live bug: a subshop row with only the placeholder password must
+        // report false, and the lookup must be constrained to the current shop
+        // (not read another shop's set password). See OXS-3046.
+        $result = $this->createMock(Result::class);
+        $result->method('fetchAssociative')->willReturn(['OXPASSWORD' => 'placeholder-not-bcrypt']);
+
+        $queryBuilder = $this->createMock(QueryBuilder::class);
+        $queryBuilder->method('select')->willReturnSelf();
+        $queryBuilder->method('from')->willReturnSelf();
+        $queryBuilder->method('where')->willReturnSelf();
+        $queryBuilder->method('setParameter')->willReturnSelf();
+        $queryBuilder->expects($this->once())
+            ->method('andWhere')->with('OXSHOPID = :shopId')->willReturnSelf();
+        $queryBuilder->method('execute')->willReturn($result);
+
+        $queryBuilderFactory = $this->createMock(QueryBuilderFactoryInterface::class);
+        $queryBuilderFactory->method('create')->willReturn($queryBuilder);
+
+        $shopFacade = $this->createStub(ShopFacadeInterface::class);
+        $shopFacade->method('areMallUsersEnabled')->willReturn(false);
+        $shopFacade->method('getShopId')->willReturn(2);
+
+        $this->assertFalse(
+            $this->getSut(queryBuilderFactory: $queryBuilderFactory, shopFacade: $shopFacade)->isApiUserPasswordSet()
+        );
+    }
+
     private function getSut(
         ?QueryBuilderFactoryInterface $queryBuilderFactory = null,
+        ?ShopFacadeInterface $shopFacade = null,
     ): ApiUserStatusService {
+        if ($shopFacade === null) {
+            // Default to mall users ON: a global lookup with no shop constraint,
+            // so the existing query expectations below hold unchanged.
+            $shopFacade = $this->createStub(ShopFacadeInterface::class);
+            $shopFacade->method('areMallUsersEnabled')->willReturn(true);
+        }
+
         return new ApiUserStatusService(
             queryBuilderFactory: $queryBuilderFactory ?? $this->createStub(QueryBuilderFactoryInterface::class),
+            shopFacade: $shopFacade,
         );
     }
 }
