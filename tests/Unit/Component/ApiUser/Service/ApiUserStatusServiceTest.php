@@ -12,12 +12,16 @@ namespace OxidSupport\Heartbeat\Tests\Unit\Component\ApiUser\Service;
 use Doctrine\DBAL\Query\QueryBuilder;
 use Doctrine\DBAL\Result;
 use OxidEsales\EshopCommunity\Internal\Framework\Database\QueryBuilderFactoryInterface;
+use OxidSupport\Heartbeat\Component\ApiUser\Service\ApiUserShopScopeInterface;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\ApiUserStatusService;
 use OxidSupport\Heartbeat\Module\Module;
-use OxidSupport\Heartbeat\Shop\Facade\ShopFacadeInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * The shop scoping itself is covered by ApiUserShopScopeTest; here the scope is
+ * a no-op stub, so these tests pin the status logic (created / password / setup).
+ */
 #[CoversClass(ApiUserStatusService::class)]
 final class ApiUserStatusServiceTest extends TestCase
 {
@@ -28,9 +32,7 @@ final class ApiUserStatusServiceTest extends TestCase
     public function testIsApiUserCreatedReturnsTrueWhenUserExists(): void
     {
         $result = $this->createMock(Result::class);
-        $result->expects($this->once())
-            ->method('fetchOne')
-            ->willReturn('1');
+        $result->expects($this->once())->method('fetchOne')->willReturn('1');
 
         $queryBuilder = $this->createMock(QueryBuilder::class);
         $queryBuilder->expects($this->once())->method('select')->with('COUNT(*)')->willReturnSelf();
@@ -41,22 +43,15 @@ final class ApiUserStatusServiceTest extends TestCase
         $queryBuilder->expects($this->once())->method('execute')->willReturn($result);
 
         $queryBuilderFactory = $this->createMock(QueryBuilderFactoryInterface::class);
-        $queryBuilderFactory
-            ->expects($this->once())
-            ->method('create')
-            ->willReturn($queryBuilder);
+        $queryBuilderFactory->expects($this->once())->method('create')->willReturn($queryBuilder);
 
-        $result = $this->getSut(queryBuilderFactory: $queryBuilderFactory)->isApiUserCreated();
-
-        $this->assertTrue($result);
+        $this->assertTrue($this->getSut(queryBuilderFactory: $queryBuilderFactory)->isApiUserCreated());
     }
 
     public function testIsApiUserCreatedReturnsFalseWhenUserDoesNotExist(): void
     {
         $result = $this->createMock(Result::class);
-        $result->expects($this->once())
-            ->method('fetchOne')
-            ->willReturn('0');
+        $result->expects($this->once())->method('fetchOne')->willReturn('0');
 
         $queryBuilder = $this->createMock(QueryBuilder::class);
         $queryBuilder->method('select')->willReturnSelf();
@@ -68,20 +63,15 @@ final class ApiUserStatusServiceTest extends TestCase
         $queryBuilderFactory = $this->createMock(QueryBuilderFactoryInterface::class);
         $queryBuilderFactory->method('create')->willReturn($queryBuilder);
 
-        $result = $this->getSut(queryBuilderFactory: $queryBuilderFactory)->isApiUserCreated();
-
-        $this->assertFalse($result);
+        $this->assertFalse($this->getSut(queryBuilderFactory: $queryBuilderFactory)->isApiUserCreated());
     }
 
     public function testIsApiUserCreatedReturnsFalseOnException(): void
     {
         $queryBuilderFactory = $this->createMock(QueryBuilderFactoryInterface::class);
-        $queryBuilderFactory->method('create')
-            ->willThrowException(new \Exception('Database error'));
+        $queryBuilderFactory->method('create')->willThrowException(new \Exception('Database error'));
 
-        $result = $this->getSut(queryBuilderFactory: $queryBuilderFactory)->isApiUserCreated();
-
-        $this->assertFalse($result);
+        $this->assertFalse($this->getSut(queryBuilderFactory: $queryBuilderFactory)->isApiUserCreated());
     }
 
     // ===========================================
@@ -91,11 +81,8 @@ final class ApiUserStatusServiceTest extends TestCase
     public function testIsApiUserPasswordSetReturnsTrueWhenPasswordIsSet(): void
     {
         $result = $this->createMock(Result::class);
-        $result->expects($this->once())
-            ->method('fetchAssociative')
-            ->willReturn([
-                'OXPASSWORD' => '$2y$10$somehash',
-            ]);
+        $result->expects($this->once())->method('fetchAssociative')
+            ->willReturn(['OXPASSWORD' => '$2y$10$somehash']);
 
         $queryBuilder = $this->createMock(QueryBuilder::class);
         $queryBuilder->expects($this->once())->method('select')->with('OXPASSWORD')->willReturnSelf();
@@ -108,19 +95,14 @@ final class ApiUserStatusServiceTest extends TestCase
         $queryBuilderFactory = $this->createMock(QueryBuilderFactoryInterface::class);
         $queryBuilderFactory->expects($this->once())->method('create')->willReturn($queryBuilder);
 
-        $result = $this->getSut(queryBuilderFactory: $queryBuilderFactory)->isApiUserPasswordSet();
-
-        $this->assertTrue($result);
+        $this->assertTrue($this->getSut(queryBuilderFactory: $queryBuilderFactory)->isApiUserPasswordSet());
     }
 
     public function testIsApiUserPasswordSetReturnsFalseWhenPasswordIsNotBCrypt(): void
     {
         $result = $this->createMock(Result::class);
-        $result->expects($this->once())
-            ->method('fetchAssociative')
-            ->willReturn([
-                'OXPASSWORD' => 'placeholder_hash_not_bcrypt',
-            ]);
+        $result->expects($this->once())->method('fetchAssociative')
+            ->willReturn(['OXPASSWORD' => 'placeholder_hash_not_bcrypt']);
 
         $queryBuilder = $this->createMock(QueryBuilder::class);
         $queryBuilder->method('select')->willReturnSelf();
@@ -132,17 +114,13 @@ final class ApiUserStatusServiceTest extends TestCase
         $queryBuilderFactory = $this->createMock(QueryBuilderFactoryInterface::class);
         $queryBuilderFactory->method('create')->willReturn($queryBuilder);
 
-        $result = $this->getSut(queryBuilderFactory: $queryBuilderFactory)->isApiUserPasswordSet();
-
-        $this->assertFalse($result);
+        $this->assertFalse($this->getSut(queryBuilderFactory: $queryBuilderFactory)->isApiUserPasswordSet());
     }
 
     public function testIsApiUserPasswordSetReturnsFalseWhenUserNotFound(): void
     {
         $result = $this->createMock(Result::class);
-        $result->expects($this->once())
-            ->method('fetchAssociative')
-            ->willReturn(false);
+        $result->expects($this->once())->method('fetchAssociative')->willReturn(false);
 
         $queryBuilder = $this->createMock(QueryBuilder::class);
         $queryBuilder->method('select')->willReturnSelf();
@@ -154,60 +132,44 @@ final class ApiUserStatusServiceTest extends TestCase
         $queryBuilderFactory = $this->createMock(QueryBuilderFactoryInterface::class);
         $queryBuilderFactory->method('create')->willReturn($queryBuilder);
 
-        $result = $this->getSut(queryBuilderFactory: $queryBuilderFactory)->isApiUserPasswordSet();
-
-        $this->assertFalse($result);
+        $this->assertFalse($this->getSut(queryBuilderFactory: $queryBuilderFactory)->isApiUserPasswordSet());
     }
 
     public function testIsApiUserPasswordSetReturnsFalseOnException(): void
     {
         $queryBuilderFactory = $this->createMock(QueryBuilderFactoryInterface::class);
-        $queryBuilderFactory->method('create')
-            ->willThrowException(new \Exception('Database error'));
+        $queryBuilderFactory->method('create')->willThrowException(new \Exception('Database error'));
 
-        $result = $this->getSut(queryBuilderFactory: $queryBuilderFactory)->isApiUserPasswordSet();
-
-        $this->assertFalse($result);
+        $this->assertFalse($this->getSut(queryBuilderFactory: $queryBuilderFactory)->isApiUserPasswordSet());
     }
 
     // ===========================================
     // isSetupComplete() tests
-    //
-    // Setup is complete when the api user exists and its password is set.
-    // The user is created on module activation, so there is no separate
-    // migration-executed condition anymore. See OXS-3046.
     // ===========================================
 
     public function testIsSetupCompleteReturnsTrueWhenUserCreatedAndPasswordSet(): void
     {
-        // First query: user-exists check. Second query: password check.
         $userExistsResult = $this->createMock(Result::class);
         $userExistsResult->method('fetchOne')->willReturn('1');
 
         $passwordResult = $this->createMock(Result::class);
-        $passwordResult->method('fetchAssociative')->willReturn([
-            'OXPASSWORD' => '$2y$10$somevalidbcrypthash',
-        ]);
+        $passwordResult->method('fetchAssociative')->willReturn(['OXPASSWORD' => '$2y$10$somevalidbcrypthash']);
 
         $queryBuilder = $this->createMock(QueryBuilder::class);
         $queryBuilder->method('select')->willReturnSelf();
         $queryBuilder->method('from')->willReturnSelf();
         $queryBuilder->method('where')->willReturnSelf();
         $queryBuilder->method('setParameter')->willReturnSelf();
-        $queryBuilder->method('execute')
-            ->willReturnOnConsecutiveCalls($userExistsResult, $passwordResult);
+        $queryBuilder->method('execute')->willReturnOnConsecutiveCalls($userExistsResult, $passwordResult);
 
         $queryBuilderFactory = $this->createMock(QueryBuilderFactoryInterface::class);
         $queryBuilderFactory->method('create')->willReturn($queryBuilder);
 
-        $result = $this->getSut(queryBuilderFactory: $queryBuilderFactory)->isSetupComplete();
-
-        $this->assertTrue($result);
+        $this->assertTrue($this->getSut(queryBuilderFactory: $queryBuilderFactory)->isSetupComplete());
     }
 
     public function testIsSetupCompleteReturnsFalseWhenUserNotCreated(): void
     {
-        // User-exists returns false; the password check must not even be reached.
         $userExistsResult = $this->createMock(Result::class);
         $userExistsResult->method('fetchOne')->willReturn('0');
 
@@ -221,139 +183,36 @@ final class ApiUserStatusServiceTest extends TestCase
         $queryBuilderFactory = $this->createMock(QueryBuilderFactoryInterface::class);
         $queryBuilderFactory->method('create')->willReturn($queryBuilder);
 
-        $result = $this->getSut(queryBuilderFactory: $queryBuilderFactory)->isSetupComplete();
-
-        $this->assertFalse($result);
+        $this->assertFalse($this->getSut(queryBuilderFactory: $queryBuilderFactory)->isSetupComplete());
     }
 
     public function testIsSetupCompleteReturnsFalseWhenPasswordNotSet(): void
     {
-        // User exists, but the password is still the placeholder.
         $userExistsResult = $this->createMock(Result::class);
         $userExistsResult->method('fetchOne')->willReturn('1');
 
         $passwordResult = $this->createMock(Result::class);
-        $passwordResult->method('fetchAssociative')->willReturn([
-            'OXPASSWORD' => 'placeholder',
-        ]);
+        $passwordResult->method('fetchAssociative')->willReturn(['OXPASSWORD' => 'placeholder']);
 
         $queryBuilder = $this->createMock(QueryBuilder::class);
         $queryBuilder->method('select')->willReturnSelf();
         $queryBuilder->method('from')->willReturnSelf();
         $queryBuilder->method('where')->willReturnSelf();
         $queryBuilder->method('setParameter')->willReturnSelf();
-        $queryBuilder->method('execute')
-            ->willReturnOnConsecutiveCalls($userExistsResult, $passwordResult);
+        $queryBuilder->method('execute')->willReturnOnConsecutiveCalls($userExistsResult, $passwordResult);
 
         $queryBuilderFactory = $this->createMock(QueryBuilderFactoryInterface::class);
         $queryBuilderFactory->method('create')->willReturn($queryBuilder);
 
-        $result = $this->getSut(queryBuilderFactory: $queryBuilderFactory)->isSetupComplete();
-
-        $this->assertFalse($result);
-    }
-
-    // ===========================================
-    // shop scoping (mall users) tests
-    //
-    // With mall users off the service user is per subshop, so the status lookup
-    // must be constrained to the current shop; otherwise a subshop reads another
-    // shop's row. With mall users on the single shared row applies. See OXS-3046.
-    // ===========================================
-
-    public function testCreatedCheckIsScopedToCurrentShopWhenMallUsersDisabled(): void
-    {
-        $result = $this->createMock(Result::class);
-        $result->method('fetchOne')->willReturn('1');
-
-        $queryBuilder = $this->createMock(QueryBuilder::class);
-        $queryBuilder->method('select')->willReturnSelf();
-        $queryBuilder->method('from')->willReturnSelf();
-        $queryBuilder->method('where')->willReturnSelf();
-        $queryBuilder->method('setParameter')->willReturnSelf();
-        $queryBuilder->expects($this->once())
-            ->method('andWhere')->with('OXSHOPID = :shopId')->willReturnSelf();
-        $queryBuilder->method('execute')->willReturn($result);
-
-        $queryBuilderFactory = $this->createMock(QueryBuilderFactoryInterface::class);
-        $queryBuilderFactory->method('create')->willReturn($queryBuilder);
-
-        $shopFacade = $this->createStub(ShopFacadeInterface::class);
-        $shopFacade->method('areMallUsersEnabled')->willReturn(false);
-        $shopFacade->method('getShopId')->willReturn(2);
-
-        $this->assertTrue(
-            $this->getSut(queryBuilderFactory: $queryBuilderFactory, shopFacade: $shopFacade)->isApiUserCreated()
-        );
-    }
-
-    public function testCreatedCheckIsGlobalWhenMallUsersEnabled(): void
-    {
-        $result = $this->createMock(Result::class);
-        $result->method('fetchOne')->willReturn('1');
-
-        $queryBuilder = $this->createMock(QueryBuilder::class);
-        $queryBuilder->method('select')->willReturnSelf();
-        $queryBuilder->method('from')->willReturnSelf();
-        $queryBuilder->method('where')->willReturnSelf();
-        $queryBuilder->method('setParameter')->willReturnSelf();
-        $queryBuilder->expects($this->never())->method('andWhere');
-        $queryBuilder->method('execute')->willReturn($result);
-
-        $queryBuilderFactory = $this->createMock(QueryBuilderFactoryInterface::class);
-        $queryBuilderFactory->method('create')->willReturn($queryBuilder);
-
-        $shopFacade = $this->createStub(ShopFacadeInterface::class);
-        $shopFacade->method('areMallUsersEnabled')->willReturn(true);
-
-        $this->assertTrue(
-            $this->getSut(queryBuilderFactory: $queryBuilderFactory, shopFacade: $shopFacade)->isApiUserCreated()
-        );
-    }
-
-    public function testPasswordCheckIsScopedToCurrentShopWhenMallUsersDisabled(): void
-    {
-        // The live bug: a subshop row with only the placeholder password must
-        // report false, and the lookup must be constrained to the current shop
-        // (not read another shop's set password). See OXS-3046.
-        $result = $this->createMock(Result::class);
-        $result->method('fetchAssociative')->willReturn(['OXPASSWORD' => 'placeholder-not-bcrypt']);
-
-        $queryBuilder = $this->createMock(QueryBuilder::class);
-        $queryBuilder->method('select')->willReturnSelf();
-        $queryBuilder->method('from')->willReturnSelf();
-        $queryBuilder->method('where')->willReturnSelf();
-        $queryBuilder->method('setParameter')->willReturnSelf();
-        $queryBuilder->expects($this->once())
-            ->method('andWhere')->with('OXSHOPID = :shopId')->willReturnSelf();
-        $queryBuilder->method('execute')->willReturn($result);
-
-        $queryBuilderFactory = $this->createMock(QueryBuilderFactoryInterface::class);
-        $queryBuilderFactory->method('create')->willReturn($queryBuilder);
-
-        $shopFacade = $this->createStub(ShopFacadeInterface::class);
-        $shopFacade->method('areMallUsersEnabled')->willReturn(false);
-        $shopFacade->method('getShopId')->willReturn(2);
-
-        $this->assertFalse(
-            $this->getSut(queryBuilderFactory: $queryBuilderFactory, shopFacade: $shopFacade)->isApiUserPasswordSet()
-        );
+        $this->assertFalse($this->getSut(queryBuilderFactory: $queryBuilderFactory)->isSetupComplete());
     }
 
     private function getSut(
         ?QueryBuilderFactoryInterface $queryBuilderFactory = null,
-        ?ShopFacadeInterface $shopFacade = null,
     ): ApiUserStatusService {
-        if ($shopFacade === null) {
-            // Default to mall users ON: a global lookup with no shop constraint,
-            // so the existing query expectations below hold unchanged.
-            $shopFacade = $this->createStub(ShopFacadeInterface::class);
-            $shopFacade->method('areMallUsersEnabled')->willReturn(true);
-        }
-
         return new ApiUserStatusService(
             queryBuilderFactory: $queryBuilderFactory ?? $this->createStub(QueryBuilderFactoryInterface::class),
-            shopFacade: $shopFacade,
+            apiUserShopScope: $this->createStub(ApiUserShopScopeInterface::class),
         );
     }
 }
