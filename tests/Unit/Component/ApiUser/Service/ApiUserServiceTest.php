@@ -99,17 +99,20 @@ final class ApiUserServiceTest extends TestCase
         $this->assertEquals('void', $returnType->getName());
     }
 
-    public function testConstructorRequiresQueryBuilderFactoryAndTokenInvalidator(): void
+    public function testConstructorRequiresQueryBuilderFactoryTokenInvalidatorAndShopFacade(): void
     {
         $reflection = new \ReflectionClass(ApiUserService::class);
         $constructor = $reflection->getConstructor();
 
         $this->assertNotNull($constructor);
-        $this->assertCount(2, $constructor->getParameters());
+        $this->assertCount(3, $constructor->getParameters());
 
         $params = $constructor->getParameters();
         $this->assertEquals('queryBuilderFactory', $params[0]->getName());
         $this->assertEquals('tokenInvalidator', $params[1]->getName());
+        // ShopFacade scopes the api-user lookup to the current shop under EE
+        // mall-users-off (per-subshop service user). See OXS-3046.
+        $this->assertEquals('shopFacade', $params[2]->getName());
     }
 
     public function testAllPublicApiMethodsArePublic(): void

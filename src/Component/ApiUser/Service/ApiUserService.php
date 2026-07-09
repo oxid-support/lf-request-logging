@@ -9,10 +9,12 @@ declare(strict_types=1);
 
 namespace OxidSupport\Heartbeat\Component\ApiUser\Service;
 
+use Doctrine\DBAL\Query\QueryBuilder;
 use OxidEsales\Eshop\Application\Model\User;
 use OxidEsales\EshopCommunity\Internal\Framework\Database\QueryBuilderFactoryInterface;
 use OxidSupport\Heartbeat\Module\Module;
 use OxidSupport\Heartbeat\Component\ApiUser\Exception\UserNotFoundException;
+use OxidSupport\Heartbeat\Shop\Facade\ShopFacadeInterface;
 
 /**
  * Service for API user operations.
@@ -22,6 +24,7 @@ final class ApiUserService implements ApiUserServiceInterface
     public function __construct(
         private readonly QueryBuilderFactoryInterface $queryBuilderFactory,
         private readonly TokenInvalidatorInterface $tokenInvalidator,
+        private readonly ShopFacadeInterface $shopFacade,
     ) {
     }
 
@@ -33,6 +36,7 @@ final class ApiUserService implements ApiUserServiceInterface
             ->from('oxuser')
             ->where('OXUSERNAME = :email')
             ->setParameter('email', Module::API_USER_EMAIL);
+        $this->scopeToCurrentShop($queryBuilder);
 
         $userId = $queryBuilder->execute()->fetchOne(); // @phpstan-ignore method.nonObject
 
@@ -41,6 +45,20 @@ final class ApiUserService implements ApiUserServiceInterface
         }
 
         return $user->load($userId);
+    }
+
+    /**
+     * With mall users off the service user is per subshop, so an admin action
+     * (set/reset password) must target THIS shop's row, not another shop's.
+     * With mall users on the single shared row applies. See OXS-3046.
+     */
+    private function scopeToCurrentShop(QueryBuilder $queryBuilder): void
+    {
+        if (!$this->shopFacade->areMallUsersEnabled()) {
+            $queryBuilder
+                ->andWhere('OXSHOPID = :shopId')
+                ->setParameter('shopId', $this->shopFacade->getShopId());
+        }
     }
 
     public function resetPassword(string $userId): void
