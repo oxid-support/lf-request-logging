@@ -105,6 +105,10 @@ services:
         class: OxidSupport\Heartbeat\Component\ApiUser\Service\ApiUserService
         public: true
 
+    OxidSupport\Heartbeat\Component\ApiUser\Service\ApiUserProvisioningServiceInterface:
+        class: OxidSupport\Heartbeat\Component\ApiUser\Service\ApiUserProvisioningService
+        public: true
+
     OxidSupport\Heartbeat\Component\ApiUser\Service\TokenGeneratorInterface:
         class: OxidSupport\Heartbeat\Component\ApiUser\Service\TokenGenerator
         public: true
@@ -136,10 +140,6 @@ services:
 
     OxidSupport\Heartbeat\Component\RequestLogger\Service\Remote\SettingServiceInterface:
         class: OxidSupport\Heartbeat\Component\RequestLogger\Service\Remote\SettingService
-
-    OxidSupport\Heartbeat\Component\RequestLogger\Service\Remote\SetupStatusServiceInterface:
-        class: OxidSupport\Heartbeat\Component\RequestLogger\Service\Remote\SetupStatusService
-        public: true
 
     OxidSupport\Heartbeat\Component\RequestLogger\Service\Remote\RemoteComponentStatusServiceInterface:
         class: OxidSupport\Heartbeat\Component\RequestLogger\Service\Remote\RemoteComponentStatusService

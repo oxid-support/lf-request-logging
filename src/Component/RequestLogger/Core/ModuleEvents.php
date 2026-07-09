@@ -9,15 +9,14 @@ declare(strict_types=1);
 
 namespace OxidSupport\Heartbeat\Component\RequestLogger\Core;
 
-use OxidEsales\DoctrineMigrationWrapper\MigrationsBuilder;
 use OxidEsales\Eshop\Core\Registry;
 use OxidEsales\EshopCommunity\Internal\Container\ContainerFactory;
 use OxidEsales\EshopCommunity\Internal\Framework\Database\QueryBuilderFactoryInterface;
 use OxidEsales\EshopCommunity\Internal\Framework\Module\Facade\ModuleSettingServiceInterface;
+use OxidSupport\Heartbeat\Component\ApiUser\Service\ApiUserProvisioningServiceInterface;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\TokenGeneratorInterface;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\TokenInvalidatorInterface;
 use OxidSupport\Heartbeat\Module\Module;
-use Symfony\Component\Console\Output\BufferedOutput;
 
 final class ModuleEvents
 {
@@ -31,11 +30,21 @@ final class ModuleEvents
      */
     public static function onActivate(): void
     {
-        self::executeModuleMigrations();
+        // Module activation intentionally does NOT run database migrations
+        // (schema is an operator/pipeline concern, see OXS-3066). The module
+        // ships no migrations anymore; the api user, its group and the group
+        // membership are seeded below in the current shop context. See OXS-3046.
         self::regenerateViews();
         self::clearCache();
 
         $container = ContainerFactory::getInstance()->getContainer();
+
+        // Create the api group, the service user and the group membership for
+        // the current shop. Idempotent, runs on every activation, and replaces
+        // the former data-seeding migration. This is the single creation path;
+        // there is no migration to run first. See OXS-3046.
+        $container->get(ApiUserProvisioningServiceInterface::class)->ensureApiUser();
+
         $moduleSettingService = $container->get(ModuleSettingServiceInterface::class);
 
         try {
@@ -75,16 +84,6 @@ final class ModuleEvents
             // not registered, api user missing) because we must not block the
             // deactivation flow itself. The tokens become useless without the
             // module routes anyway.
-        }
-    }
-
-    private static function executeModuleMigrations(): void
-    {
-        $migrations = (new MigrationsBuilder())->build();
-        $output = new BufferedOutput();
-        $migrations->setOutput($output);
-        if ($migrations->execute('migrations:up-to-date', Module::ID)) {
-            $migrations->execute('migrations:migrate', Module::ID);
         }
     }
 

@@ -20,72 +20,6 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(ApiUserStatusService::class)]
 final class ApiUserStatusServiceTest extends TestCase
 {
-    private const MIGRATION_TABLE = 'oxmigrations_oxsheartbeat';
-    private const EXPECTED_MIGRATION = 'OxidSupport\\Heartbeat\\Migrations\\Version20251223000001';
-
-    // ===========================================
-    // isMigrationExecuted() tests
-    // ===========================================
-
-    public function testIsMigrationExecutedReturnsTrueWhenMigrationExists(): void
-    {
-        $result = $this->createMock(Result::class);
-        $result->expects($this->once())
-            ->method('fetchOne')
-            ->willReturn('1');
-
-        $queryBuilder = $this->createMock(QueryBuilder::class);
-        $queryBuilder->expects($this->once())->method('select')->with('COUNT(*)')->willReturnSelf();
-        $queryBuilder->expects($this->once())->method('from')->with(self::MIGRATION_TABLE)->willReturnSelf();
-        $queryBuilder->expects($this->once())->method('where')->with('version = :version')->willReturnSelf();
-        $queryBuilder->expects($this->once())->method('setParameter')
-            ->with('version', self::EXPECTED_MIGRATION)->willReturnSelf();
-        $queryBuilder->expects($this->once())->method('execute')->willReturn($result);
-
-        $queryBuilderFactory = $this->createMock(QueryBuilderFactoryInterface::class);
-        $queryBuilderFactory
-            ->expects($this->once())
-            ->method('create')
-            ->willReturn($queryBuilder);
-
-        $result = $this->getSut(queryBuilderFactory: $queryBuilderFactory)->isMigrationExecuted();
-
-        $this->assertTrue($result);
-    }
-
-    public function testIsMigrationExecutedReturnsFalseWhenMigrationDoesNotExist(): void
-    {
-        $result = $this->createMock(Result::class);
-        $result->expects($this->once())
-            ->method('fetchOne')
-            ->willReturn('0');
-
-        $queryBuilder = $this->createMock(QueryBuilder::class);
-        $queryBuilder->method('select')->willReturnSelf();
-        $queryBuilder->method('from')->willReturnSelf();
-        $queryBuilder->method('where')->willReturnSelf();
-        $queryBuilder->method('setParameter')->willReturnSelf();
-        $queryBuilder->method('execute')->willReturn($result);
-
-        $queryBuilderFactory = $this->createMock(QueryBuilderFactoryInterface::class);
-        $queryBuilderFactory->method('create')->willReturn($queryBuilder);
-
-        $result = $this->getSut(queryBuilderFactory: $queryBuilderFactory)->isMigrationExecuted();
-
-        $this->assertFalse($result);
-    }
-
-    public function testIsMigrationExecutedReturnsFalseOnException(): void
-    {
-        $queryBuilderFactory = $this->createMock(QueryBuilderFactoryInterface::class);
-        $queryBuilderFactory->method('create')
-            ->willThrowException(new \Exception('Database error'));
-
-        $result = $this->getSut(queryBuilderFactory: $queryBuilderFactory)->isMigrationExecuted();
-
-        $this->assertFalse($result);
-    }
-
     // ===========================================
     // isApiUserCreated() tests
     // ===========================================
@@ -237,19 +171,18 @@ final class ApiUserStatusServiceTest extends TestCase
 
     // ===========================================
     // isSetupComplete() tests
+    //
+    // Setup is complete when the api user exists and its password is set.
+    // The user is created on module activation, so there is no separate
+    // migration-executed condition anymore. See OXS-3046.
     // ===========================================
 
-    public function testIsSetupCompleteReturnsTrueWhenAllConditionsMet(): void
+    public function testIsSetupCompleteReturnsTrueWhenUserCreatedAndPasswordSet(): void
     {
-        // Mock for migration check
-        $migrationResult = $this->createMock(Result::class);
-        $migrationResult->method('fetchOne')->willReturn('1');
-
-        // Mock for user exists check
+        // First query: user-exists check. Second query: password check.
         $userExistsResult = $this->createMock(Result::class);
         $userExistsResult->method('fetchOne')->willReturn('1');
 
-        // Mock for password check - must be BCrypt hash
         $passwordResult = $this->createMock(Result::class);
         $passwordResult->method('fetchAssociative')->willReturn([
             'OXPASSWORD' => '$2y$10$somevalidbcrypthash',
@@ -261,7 +194,7 @@ final class ApiUserStatusServiceTest extends TestCase
         $queryBuilder->method('where')->willReturnSelf();
         $queryBuilder->method('setParameter')->willReturnSelf();
         $queryBuilder->method('execute')
-            ->willReturnOnConsecutiveCalls($migrationResult, $userExistsResult, $passwordResult);
+            ->willReturnOnConsecutiveCalls($userExistsResult, $passwordResult);
 
         $queryBuilderFactory = $this->createMock(QueryBuilderFactoryInterface::class);
         $queryBuilderFactory->method('create')->willReturn($queryBuilder);
@@ -271,33 +204,9 @@ final class ApiUserStatusServiceTest extends TestCase
         $this->assertTrue($result);
     }
 
-    public function testIsSetupCompleteReturnsFalseWhenMigrationNotExecuted(): void
-    {
-        $migrationResult = $this->createMock(Result::class);
-        $migrationResult->method('fetchOne')->willReturn('0');
-
-        $queryBuilder = $this->createMock(QueryBuilder::class);
-        $queryBuilder->method('select')->willReturnSelf();
-        $queryBuilder->method('from')->willReturnSelf();
-        $queryBuilder->method('where')->willReturnSelf();
-        $queryBuilder->method('setParameter')->willReturnSelf();
-        $queryBuilder->method('execute')->willReturn($migrationResult);
-
-        $queryBuilderFactory = $this->createMock(QueryBuilderFactoryInterface::class);
-        $queryBuilderFactory->method('create')->willReturn($queryBuilder);
-
-        $result = $this->getSut(queryBuilderFactory: $queryBuilderFactory)->isSetupComplete();
-
-        $this->assertFalse($result);
-    }
-
     public function testIsSetupCompleteReturnsFalseWhenUserNotCreated(): void
     {
-        // Migration returns true
-        $migrationResult = $this->createMock(Result::class);
-        $migrationResult->method('fetchOne')->willReturn('1');
-
-        // User exists returns false
+        // User-exists returns false; the password check must not even be reached.
         $userExistsResult = $this->createMock(Result::class);
         $userExistsResult->method('fetchOne')->willReturn('0');
 
@@ -306,8 +215,7 @@ final class ApiUserStatusServiceTest extends TestCase
         $queryBuilder->method('from')->willReturnSelf();
         $queryBuilder->method('where')->willReturnSelf();
         $queryBuilder->method('setParameter')->willReturnSelf();
-        $queryBuilder->method('execute')
-            ->willReturnOnConsecutiveCalls($migrationResult, $userExistsResult);
+        $queryBuilder->method('execute')->willReturn($userExistsResult);
 
         $queryBuilderFactory = $this->createMock(QueryBuilderFactoryInterface::class);
         $queryBuilderFactory->method('create')->willReturn($queryBuilder);
@@ -319,19 +227,13 @@ final class ApiUserStatusServiceTest extends TestCase
 
     public function testIsSetupCompleteReturnsFalseWhenPasswordNotSet(): void
     {
-        // Migration returns true
-        $migrationResult = $this->createMock(Result::class);
-        $migrationResult->method('fetchOne')->willReturn('1');
-
-        // User exists returns true
+        // User exists, but the password is still the placeholder.
         $userExistsResult = $this->createMock(Result::class);
         $userExistsResult->method('fetchOne')->willReturn('1');
 
-        // Password is placeholder (empty salt)
         $passwordResult = $this->createMock(Result::class);
         $passwordResult->method('fetchAssociative')->willReturn([
             'OXPASSWORD' => 'placeholder',
-            'OXPASSSALT' => '',
         ]);
 
         $queryBuilder = $this->createMock(QueryBuilder::class);
@@ -340,7 +242,7 @@ final class ApiUserStatusServiceTest extends TestCase
         $queryBuilder->method('where')->willReturnSelf();
         $queryBuilder->method('setParameter')->willReturnSelf();
         $queryBuilder->method('execute')
-            ->willReturnOnConsecutiveCalls($migrationResult, $userExistsResult, $passwordResult);
+            ->willReturnOnConsecutiveCalls($userExistsResult, $passwordResult);
 
         $queryBuilderFactory = $this->createMock(QueryBuilderFactoryInterface::class);
         $queryBuilderFactory->method('create')->willReturn($queryBuilder);

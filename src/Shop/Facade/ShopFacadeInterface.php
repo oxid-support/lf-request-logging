@@ -10,6 +10,12 @@ interface ShopFacadeInterface
 {
     public function getShopId(): int;
 
+    /**
+     * Whether the shop shares customer accounts across all subshops
+     * (EE `blMallUsers`). Off means users are scoped per subshop.
+     */
+    public function areMallUsersEnabled(): bool;
+
     public function getShopUrl(): ?string;
 
     public function getShopVersion(): string;

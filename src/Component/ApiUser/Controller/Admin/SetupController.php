@@ -76,18 +76,6 @@ class SetupController extends AbstractComponentController
     }
 
     /**
-     * Check if migrations have been executed.
-     */
-    public function isMigrationExecuted(): bool
-    {
-        try {
-            return $this->getApiUserStatusService()->isMigrationExecuted();
-        } catch (\Exception) {
-            return false;
-        }
-    }
-
-    /**
      * Check if the API user exists.
      */
     public function isApiUserCreated(): bool

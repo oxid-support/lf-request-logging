@@ -16,11 +16,6 @@ namespace OxidSupport\Heartbeat\Component\ApiUser\Service;
 interface ApiUserStatusServiceInterface
 {
     /**
-     * Check if the module migrations have been executed.
-     */
-    public function isMigrationExecuted(): bool;
-
-    /**
      * Check if the API user exists in the database.
      */
     public function isApiUserCreated(): bool;
@@ -33,7 +28,7 @@ interface ApiUserStatusServiceInterface
 
     /**
      * Check if the complete API User setup is done.
-     * This means: migration executed AND user created AND password set.
+     * This means: user created AND password set.
      */
     public function isSetupComplete(): bool;
 }

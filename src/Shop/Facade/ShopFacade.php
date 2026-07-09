@@ -19,6 +19,11 @@ class ShopFacade implements ShopFacadeInterface
         return (int) $this->getConfig()->getShopId();
     }
 
+    public function areMallUsersEnabled(): bool
+    {
+        return (bool) $this->getConfig()->getConfigParam('blMallUsers');
+    }
+
     public function getShopUrl(): ?string
     {
         return $this->getConfig()->getShopUrl();
