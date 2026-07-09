@@ -40,13 +40,16 @@ final class ApiUserProvisioningService implements ApiUserProvisioningServiceInte
 
     private QueryBuilderFactoryInterface $queryBuilderFactory;
     private ShopFacadeInterface $shopFacade;
+    private ApiUserShopScopeInterface $apiUserShopScope;
 
     public function __construct(
         QueryBuilderFactoryInterface $queryBuilderFactory,
-        ShopFacadeInterface $shopFacade
+        ShopFacadeInterface $shopFacade,
+        ApiUserShopScopeInterface $apiUserShopScope
     ) {
         $this->queryBuilderFactory = $queryBuilderFactory;
         $this->shopFacade = $shopFacade;
+        $this->apiUserShopScope = $apiUserShopScope;
     }
 
     public function ensureApiUser(): void
@@ -127,12 +130,7 @@ final class ApiUserProvisioningService implements ApiUserProvisioningServiceInte
             ->from('oxuser')
             ->where('OXUSERNAME = :email')
             ->setParameter('email', Module::API_USER_EMAIL);
-
-        if (!$this->shopFacade->areMallUsersEnabled()) {
-            $queryBuilder
-                ->andWhere('OXSHOPID = :shopId')
-                ->setParameter('shopId', $this->shopFacade->getShopId());
-        }
+        $this->apiUserShopScope->restrictToCurrentShop($queryBuilder);
 
         $userId = $queryBuilder->execute()->fetchOne(); // @phpstan-ignore method.nonObject
 

@@ -56,8 +56,8 @@ final class TokenInvalidatorTest extends TestCase
     {
         // Intentionally no ApiUserService dependency: ApiUserService injects
         // TokenInvalidator and a circular dependency would result. See OXS-3054.
-        // ShopFacade is injected to scope the lookup to the current shop under
-        // EE mall-users-off (per-subshop service user). See OXS-3046.
+        // ApiUserShopScope is injected to scope the lookup to the current shop
+        // under EE mall-users-off (per-subshop service user). See OXS-3046.
         $reflection = new \ReflectionClass(TokenInvalidator::class);
         $constructor = $reflection->getConstructor();
 
@@ -67,7 +67,7 @@ final class TokenInvalidatorTest extends TestCase
             $constructor->getParameters()
         );
         $this->assertContains('queryBuilderFactory', $names);
-        $this->assertContains('shopFacade', $names);
+        $this->assertContains('apiUserShopScope', $names);
         $this->assertNotContains('apiUserService', $names);
     }
 }
