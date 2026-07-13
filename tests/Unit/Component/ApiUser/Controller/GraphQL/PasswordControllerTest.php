@@ -15,6 +15,7 @@ use OxidSupport\Heartbeat\Component\ApiUser\Exception\InvalidTokenException;
 use OxidSupport\Heartbeat\Component\ApiUser\Exception\PasswordTooShortException;
 use OxidSupport\Heartbeat\Component\ApiUser\Exception\SetPasswordFailedException;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\ApiUserServiceInterface;
+use OxidSupport\Heartbeat\Component\ApiUser\Service\ApiUserStatusServiceInterface;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\TokenInvalidatorInterface;
 use OxidSupport\Heartbeat\Module\Module;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -120,7 +121,8 @@ final class PasswordControllerTest extends TestCase
         $controller = new PasswordController(
             $this->createMock(ApiUserServiceInterface::class),
             $this->createMock(ModuleSettingBridgeInterface::class),
-            $invalidator
+            $invalidator,
+            $this->createMock(ApiUserStatusServiceInterface::class)
         );
 
         $this->assertSame(3, $controller->heartbeatInvalidateTokens());
@@ -140,7 +142,8 @@ final class PasswordControllerTest extends TestCase
         $controller = new PasswordController(
             $this->createMock(ApiUserServiceInterface::class),
             $settings,
-            $this->createMock(TokenInvalidatorInterface::class)
+            $this->createMock(TokenInvalidatorInterface::class),
+            $this->createMock(ApiUserStatusServiceInterface::class)
         );
 
         $this->expectException(InvalidTokenException::class);
@@ -157,7 +160,8 @@ final class PasswordControllerTest extends TestCase
         $controller = new PasswordController(
             $this->createMock(ApiUserServiceInterface::class),
             $settings,
-            $this->createMock(TokenInvalidatorInterface::class)
+            $this->createMock(TokenInvalidatorInterface::class),
+            $this->createMock(ApiUserStatusServiceInterface::class)
         );
 
         $this->expectException(PasswordTooShortException::class);
@@ -186,7 +190,12 @@ final class PasswordControllerTest extends TestCase
         $service->method('setPasswordForApiUser')
             ->willThrowException(new \RuntimeException('internal token table missing'));
 
-        $controller = new PasswordController($service, $settings, $this->createMock(TokenInvalidatorInterface::class));
+        $controller = new PasswordController(
+            $service,
+            $settings,
+            $this->createMock(TokenInvalidatorInterface::class),
+            $this->createMock(ApiUserStatusServiceInterface::class)
+        );
 
         try {
             $controller->heartbeatSetPassword($storedToken, 'a-strong-password-1234');
@@ -218,11 +227,48 @@ final class PasswordControllerTest extends TestCase
 
         $service = $this->createMock(ApiUserServiceInterface::class);
 
-        $controller = new PasswordController($service, $settings, $this->createMock(TokenInvalidatorInterface::class));
+        $controller = new PasswordController(
+            $service,
+            $settings,
+            $this->createMock(TokenInvalidatorInterface::class),
+            $this->createMock(ApiUserStatusServiceInterface::class)
+        );
 
         $result = $controller->heartbeatSetPassword($storedToken, 'a-strong-password-1234');
 
         $this->assertTrue($result);
         $this->assertSame([''], $savedValues, 'token is cleared once and not restored on success');
+    }
+
+    /**
+     * Defense in depth for EE subshops (OXS-3103): once this shop's service-user
+     * password is set, heartbeatSetPassword must refuse even a token that matches
+     * the stored value (e.g. a token inherited from the base shop that onActivate
+     * has not cleared), with the SAME generic error as an invalid token (no
+     * setup-status oracle), and must not touch the password or the token.
+     */
+    public function testSetPasswordRefusedWhenPasswordAlreadySet(): void
+    {
+        $storedToken = 'a-valid-setup-token-value';
+
+        $settings = $this->createMock(ModuleSettingBridgeInterface::class);
+        $settings->method('get')->willReturn($storedToken);
+        $settings->expects($this->never())->method('save');
+
+        $service = $this->createMock(ApiUserServiceInterface::class);
+        $service->expects($this->never())->method('setPasswordForApiUser');
+
+        $status = $this->createMock(ApiUserStatusServiceInterface::class);
+        $status->method('isApiUserPasswordSet')->willReturn(true);
+
+        $controller = new PasswordController(
+            $service,
+            $settings,
+            $this->createMock(TokenInvalidatorInterface::class),
+            $status
+        );
+
+        $this->expectException(InvalidTokenException::class);
+        $controller->heartbeatSetPassword($storedToken, 'a-strong-password-1234');
     }
 }

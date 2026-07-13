@@ -15,6 +15,7 @@ use OxidSupport\Heartbeat\Component\ApiUser\Exception\InvalidTokenException;
 use OxidSupport\Heartbeat\Component\ApiUser\Exception\PasswordTooShortException;
 use OxidSupport\Heartbeat\Component\ApiUser\Exception\SetPasswordFailedException;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\ApiUserServiceInterface;
+use OxidSupport\Heartbeat\Component\ApiUser\Service\ApiUserStatusServiceInterface;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\TokenInvalidatorInterface;
 use TheCodingMachine\GraphQLite\Annotations\Logged;
 use TheCodingMachine\GraphQLite\Annotations\Mutation;
@@ -25,15 +26,18 @@ final class PasswordController
     private ApiUserServiceInterface $apiUserService;
     private ModuleSettingBridgeInterface $moduleSettingService;
     private TokenInvalidatorInterface $tokenInvalidator;
+    private ApiUserStatusServiceInterface $apiUserStatusService;
 
     public function __construct(
         ApiUserServiceInterface $apiUserService,
         ModuleSettingBridgeInterface $moduleSettingService,
-        TokenInvalidatorInterface $tokenInvalidator
+        TokenInvalidatorInterface $tokenInvalidator,
+        ApiUserStatusServiceInterface $apiUserStatusService
     ) {
         $this->apiUserService = $apiUserService;
         $this->moduleSettingService = $moduleSettingService;
         $this->tokenInvalidator = $tokenInvalidator;
+        $this->apiUserStatusService = $apiUserStatusService;
     }
 
     /**
@@ -50,6 +54,15 @@ final class PasswordController
         // is pending (closes the setup-status oracle).
         $this->validateToken($token);
         $this->validatePassword($password);
+
+        // Defense in depth for EE subshops: once this shop's service user has a
+        // usable password, setup is complete and no token may set it again, even
+        // one that matches the stored value (e.g. a token inherited from the base
+        // shop that onActivate has not cleared yet). Same generic error as an
+        // invalid token, so this adds no setup-status oracle. See OXS-3103.
+        if ($this->apiUserStatusService->isApiUserPasswordSet()) {
+            throw new InvalidTokenException();
+        }
 
         // Security: Clear token BEFORE setting password to prevent race conditions (TOCTOU)
         // This ensures a second concurrent request with the same token will fail validation
