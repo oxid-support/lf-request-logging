@@ -24,14 +24,18 @@ use Psr\Container\ContainerInterface;
  * Tests for ModuleEvents focusing on the workflow state machine.
  *
  * Workflow States:
- * 1. Fresh install: No token, no password (placeholder)
+ * 1. Fresh install: No password (placeholder) -> generate token
  * 2. After activation: Token generated, password still placeholder
- * 3. After setup complete: No token, password is BCrypt
- * 4. After re-activation (setup was complete): No token, password is BCrypt -> No new token generated
+ * 3. After setup complete: password is BCrypt -> no token generated
+ * 4. Re-activation while not yet set up (password still placeholder): a fresh
+ *    per-shop token is generated even if a (stale/inherited) token value exists.
  *
- * The key insight: Token is only generated if:
- * - Token doesn't already exist AND
- * - Password is still a placeholder (not BCrypt)
+ * The key insight: the token is generated whenever THIS shop's service-user
+ * password is still a placeholder. An already-present token value must NOT skip
+ * generation: on EE a subshop inherits the base shop's module settings (incl.
+ * this token), so reusing it made subshops share the base shop's token. Only a
+ * completed setup (bcrypt password on this shop's row) skips generation.
+ * See OXS-3103.
  */
 #[CoversClass(ModuleEvents::class)]
 final class ModuleEventsTest extends TestCase
@@ -95,30 +99,55 @@ final class ModuleEventsTest extends TestCase
     }
 
     /**
-     * Workflow State: Token already exists
-     * - Token: has value
-     * - Password: doesn't matter
-     * - Expected: Don't generate new token (preserve existing)
+     * Workflow State: a token value already exists but the password is NOT set
+     * (e.g. an EE subshop that inherited the base shop's token at creation).
+     * - Token: has a (stale/inherited) value
+     * - Password: placeholder (not BCrypt)
+     * - Expected: generate a FRESH per-shop token, overwriting the inherited one.
+     *
+     * Regression guard for the subshop shared-token bug: onActivate must not gate
+     * generation on an existing token value, only on this shop's password. See
+     * OXS-3103.
      */
-    public function testOnActivateDoesNotGenerateTokenWhenTokenAlreadyExists(): void
+    public function testOnActivateRegeneratesTokenWhenInheritedTokenExistsButPasswordNotSet(): void
     {
         $moduleSettingService = $this->createMock(ModuleSettingBridgeInterface::class);
 
-        // Token already exists
+        // Password is still a placeholder for THIS shop's service user.
+        $result = $this->createMock(Result::class);
+        $result->expects($this->once())
+            ->method('fetchOne')
+            ->willReturn('a1b2c3d4e5f6placeholder');
+
+        $queryBuilder = $this->createMock(QueryBuilder::class);
+        $queryBuilder->method('select')->willReturnSelf();
+        $queryBuilder->method('from')->willReturnSelf();
+        $queryBuilder->method('where')->willReturnSelf();
+        $queryBuilder->method('setParameter')->willReturnSelf();
+        $queryBuilder->method('execute')->willReturn($result);
+
+        $queryBuilderFactory = $this->createMock(QueryBuilderFactoryInterface::class);
+        $queryBuilderFactory->method('create')->willReturn($queryBuilder);
+
+        // A fresh token IS saved even though an inherited value was present.
         $moduleSettingService
             ->expects($this->once())
-            ->method('get')
-            ->with(Module::SETTING_APIUSER_SETUP_TOKEN, Module::ID)
-            ->willReturn(new \Symfony\Component\String\UnicodeString('existing-token-12345'));
-
-        // Should NOT save a new token
-        $moduleSettingService
-            ->expects($this->never())
-            ->method('save');
+            ->method('save')
+            ->with(
+                Module::SETTING_APIUSER_SETUP_TOKEN,
+                $this->callback(fn($value) => is_string($value) && preg_match('/^[a-f0-9]{32}$/', $value) === 1),
+                Module::ID
+            );
 
         $container = $this->createMock(ContainerInterface::class);
         $container->method('get')
-            ->willReturn($moduleSettingService);
+            ->willReturnCallback(function ($service) use ($moduleSettingService, $queryBuilderFactory) {
+                return match ($service) {
+                    ModuleSettingBridgeInterface::class => $moduleSettingService,
+                    QueryBuilderFactoryInterface::class => $queryBuilderFactory,
+                    default => null,
+                };
+            });
 
         $this->mockContainer($container);
 
