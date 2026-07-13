@@ -56,7 +56,7 @@ Determine BC honestly: a removal only breaks BC if the removed thing was in that
 Work in that line's checkout under `workspace/oxid-*/source/_dev-modules/heartbeat`:
 
 1. Bump `HeartbeatModule::VERSION` in `src/Module/Module.php`. Do not touch `metadata.php`'s version (it reads the constant).
-2. In `CHANGELOG.md`, turn `## [Unreleased]` into a dated `## [X.Y.Z] - YYYY-MM-DD` section (keep an empty `## [Unreleased]` above). English, Keep a Changelog format. Each line's changelog is its own history.
+2. In `CHANGELOG.md`, turn `## [Unreleased]` into a dated `## [X.Y.Z] - YYYY-MM-DD` section (keep an empty `## [Unreleased]` above). English, Keep a Changelog format. Each line's changelog is its own history. Every entry leads with one short, plain-language summary sentence (what changed), then the why/detail; a reader should grasp each change from its first sentence.
 3. Verify the `oxid-esales/oxideshop-ce` constraint in `composer.json` states exactly the OXID range actually tested, with a **tight upper bound**. Never tag ahead of the constraint: the constraint in the tagged `composer.json` is what composer evaluates.
 4. Commit ("Release X.Y.Z"). Push the branch. Wait for CI green.
 5. Create an **annotated** tag `X.Y.Z` on the line branch and push it. Tags are global across the repo; use the number from the decision above, never reuse or renumber a published tag. Force-pushing a tag is emergency-only (constraint hotfix, see the 2.0.1/2.0.2 history) and needs explicit user approval.
