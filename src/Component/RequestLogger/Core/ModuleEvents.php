@@ -11,25 +11,17 @@ namespace OxidSupport\Heartbeat\Component\RequestLogger\Core;
 
 use OxidEsales\Eshop\Core\Registry;
 use OxidEsales\EshopCommunity\Internal\Container\ContainerFactory;
-use OxidEsales\EshopCommunity\Internal\Framework\Module\Facade\ModuleSettingServiceInterface;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\ApiUserProvisioningServiceInterface;
-use OxidSupport\Heartbeat\Component\ApiUser\Service\ApiUserStatusServiceInterface;
-use OxidSupport\Heartbeat\Component\ApiUser\Service\TokenGeneratorInterface;
+use OxidSupport\Heartbeat\Component\ApiUser\Service\SetupTokenServiceInterface;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\TokenInvalidatorInterface;
 use OxidSupport\Heartbeat\Module\Module;
 
 final class ModuleEvents
 {
     /**
-     * Called on module activation.
-     * Generates a fresh per-shop setup token whenever this shop's service user
-     * has no usable password yet. A completed setup (bcrypt password on THIS
-     * shop's row) is the only condition that skips generation.
-     *
-     * It deliberately does NOT skip generation just because a token value is
-     * already present: on EE a freshly created subshop inherits the base shop's
-     * module settings, including this token, so trusting an existing value made
-     * every subshop reuse the base shop's token. See OXS-3103.
+     * Called on module activation. Seeds the api user, its group and the group
+     * membership for the current shop, then reconciles the setup token for that
+     * shop (delegated to SetupTokenService). See OXS-3046 / OXS-3103.
      */
     public static function onActivate(): void
     {
@@ -48,27 +40,12 @@ final class ModuleEvents
         // there is no migration to run first. See OXS-3046.
         $container->get(ApiUserProvisioningServiceInterface::class)->ensureApiUser();
 
-        $moduleSettingService = $container->get(ModuleSettingServiceInterface::class);
-
-        // Shop-aware (mall users): with mall users off the service user is per
-        // subshop, so this checks THIS shop's row, not any row with the
-        // service-user name. A global check let a subshop skip token generation
-        // because another shop's password was already set. See OXS-3046.
-        if ($container->get(ApiUserStatusServiceInterface::class)->isApiUserPasswordSet()) {
-            return;
-        }
-
-        // Always (re)generate a per-shop token when this shop's password is not
-        // set. We must NOT gate this on an existing token value: on EE a freshly
-        // created subshop inherits the base shop's module settings (incl. this
-        // token), so reusing an existing value made every subshop share the base
-        // shop's token, which is the single gate on the unauthenticated
-        // heartbeatSetPassword mutation. The password check above is the
-        // authoritative "setup done" signal; re-activating a not-yet-set-up shop
-        // rotates its still-unused token, which is safe. See OXS-3103.
-        // CSPRNG-backed generator, not OXID's md5(uniqid()) generateUId().
-        $token = $container->get(TokenGeneratorInterface::class)->generate();
-        $moduleSettingService->saveString(Module::SETTING_APIUSER_SETUP_TOKEN, $token, Module::ID);
+        // Reconcile the setup token with this shop's service-user password:
+        // a fresh per-shop token while the password is unset, cleared once it is
+        // set. Shop-scoped, so EE subshops never share or retain the base shop's
+        // inherited token (the only gate on the unauthenticated
+        // heartbeatSetPassword mutation). See OXS-3103.
+        $container->get(SetupTokenServiceInterface::class)->ensureSetupToken();
     }
 
     /**
