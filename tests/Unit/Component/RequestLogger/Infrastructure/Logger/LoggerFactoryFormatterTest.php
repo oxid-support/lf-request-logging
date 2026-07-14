@@ -76,7 +76,8 @@ final class LoggerFactoryFormatterTest extends TestCase
         $logger = $this->buildFactory()->create();
         $logger->info('permission-check'); // forces the stream to open + chmod
 
-        $files = glob($this->tmpDir . '/*/*.log');
+        // oxs-request-logger/<shopId>/<file>.log (per-shop subdirectory, OXS-3130)
+        $files = glob($this->tmpDir . '/*/*/*.log');
         $this->assertNotEmpty($files, 'a log file must have been written');
 
         $filePerms = fileperms($files[0]) & 0777;

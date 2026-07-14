@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - EE subshops now get their own API-user setup token instead of sharing the base shop's. `heartbeatSetPassword` refuses a token once the shop's password is set. (OXS-3103)
 
 ### Changed
+- Request logs are now stored and served per shop (a subdirectory per shop id); the Log Sender no longer lists another subshop's log files. Log files written by earlier versions are not served. (OXS-3130)
 - The API service user, its group and the group membership are now created on module activation in the current shop context, instead of by a database migration. Module activation no longer runs database migrations at all, aligning the 6.5 line with 7.1 (OXS-3066). The former migration hardcoded the service user's `OXSHOPID = 1`; on EE with mall users off, a user pinned to shop 1 cannot authenticate on another subshop. The user is now created with the activating shop's id, and record ids come from the shop's id generator instead of a hand-rolled `md5()`. Provisioning is idempotent and runs on every activation, and is mall-user aware for EE multishop: with `blMallUsers` on a single shared service user is reused across subshops, with it off a service user is created per subshop (matching the `(OXUSERNAME, OXSHOPID)` uniqueness). End-to-end verification against a real EE multishop is tracked in OXS-3103. (OXS-3046)
 
 ### Removed

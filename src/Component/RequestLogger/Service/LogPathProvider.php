@@ -37,14 +37,20 @@ class LogPathProvider implements LogPathProviderInterface
 
     public function getLogPaths(): array
     {
-        $logDirectory = $this->shopFacade->getLogsPath() . self::LOG_DIRECTORY_NAME . DIRECTORY_SEPARATOR;
+        // Only the current shop's subdirectory, mirroring how LoggerFactory
+        // writes (oxs-request-logger/<shopId>/). Single shop-scoping point for
+        // the request logs: a subshop's service user only ever sees its own
+        // shop's files, never another subshop's. See OXS-3130.
+        $logDirectory = $this->shopFacade->getLogsPath()
+            . self::LOG_DIRECTORY_NAME . DIRECTORY_SEPARATOR
+            . $this->shopFacade->getShopId() . DIRECTORY_SEPARATOR;
 
         return [
             new LogPath(
                 $logDirectory,
                 LogPathType::DIRECTORY(),
                 'Request Logger Logs',
-                'Log files containing recorded shop requests with correlation IDs',
+                "Log files containing this shop's recorded requests with correlation IDs",
                 '*.log'
             ),
         ];

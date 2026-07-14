@@ -39,7 +39,8 @@ final class OxidCoreLogPathProvider implements LogPathProviderInterface
                 $logDirectory . self::LOG_FILENAME,
                 LogPathType::FILE(),
                 'OXID eShop Log',
-                'Core application log file containing errors, warnings and debug information'
+                'Core application log file (errors, warnings, debug). Installation-wide: '
+                    . 'one shared file for all subshops, not scoped to a single shop. See OXS-3130.'
             ),
         ];
     }
@@ -56,7 +57,7 @@ final class OxidCoreLogPathProvider implements LogPathProviderInterface
 
     public function getProviderDescription(): string
     {
-        return 'OXID eShop core log file (oxideshop.log)';
+        return 'OXID eShop core log file (oxideshop.log). Installation-wide, covers all subshops.';
     }
 
     public function isActive(): bool
