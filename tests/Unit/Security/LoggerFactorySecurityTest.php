@@ -37,6 +37,7 @@ class LoggerFactorySecurityTest extends TestCase
         $this->moduleSettingFacade = $this->createMock(ModuleSettingFacadeInterface::class);
 
         $this->shopFacade->method('getLogsPath')->willReturn('/var/www/log/');
+        $this->shopFacade->method('getShopId')->willReturn(1);
 
         $mockLogger = $this->createMock(LoggerInterface::class);
         $this->shopFacade->method('getLogger')->willReturn($mockLogger);
@@ -166,6 +167,15 @@ class LoggerFactorySecurityTest extends TestCase
         $logFilePath = $this->invokeLogFilePath('test-correlation-id');
 
         $this->assertStringContainsString('oxs-request-logger', $logFilePath);
+    }
+
+    public function testLogFilePathIsScopedToCurrentShop(): void
+    {
+        $logFilePath = $this->invokeLogFilePath('test-correlation-id');
+
+        // Written under a per-shop subdirectory so EE subshops do not share one
+        // flat log dir (shop id 1 from the mocked ShopFacade). See OXS-3130.
+        $this->assertStringContainsString('/oxs-request-logger/1/', $logFilePath);
     }
 
     public function testLogFilePathEndsWithLogExtension(): void
