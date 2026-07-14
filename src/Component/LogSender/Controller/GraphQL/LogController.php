@@ -16,6 +16,7 @@ use OxidSupport\Heartbeat\Component\LogSender\Service\LogCollectorServiceInterfa
 use OxidSupport\Heartbeat\Component\LogSender\Service\LogReaderServiceInterface;
 use OxidSupport\Heartbeat\Component\LogSender\Service\LogSenderStatusServiceInterface;
 use OxidSupport\Heartbeat\Module\Module;
+use OxidSupport\Heartbeat\Shop\Facade\ShopFacadeInterface;
 use OxidEsales\EshopCommunity\Internal\Framework\Module\Facade\ModuleSettingServiceInterface;
 use TheCodingMachine\GraphQLite\Annotations\Logged;
 use TheCodingMachine\GraphQLite\Annotations\Query;
@@ -26,11 +27,15 @@ final class LogController
     /** Fallback ceiling when the configured max bytes is missing or invalid (1 MiB). */
     private const DEFAULT_MAX_BYTES = 1048576;
 
+    /** The base shop, the only shop allowed to serve installation-wide sources. */
+    private const BASE_SHOP_ID = 1;
+
     public function __construct(
         private LogCollectorServiceInterface $logCollectorService,
         private LogReaderServiceInterface $logReaderService,
         private LogSenderStatusServiceInterface $statusService,
         private ModuleSettingServiceInterface $moduleSettingService,
+        private ShopFacadeInterface $shopFacade,
     ) {
     }
 
@@ -53,7 +58,11 @@ final class LogController
 
         $result = [];
         foreach ($sources as $source) {
-            if (in_array($source->id, $enabledSourceIds, true) && $source->available) {
+            if (
+                in_array($source->id, $enabledSourceIds, true)
+                && $source->available
+                && $this->isSourceAllowedForCurrentShop($source->id)
+            ) {
                 $result[] = LogSourceType::fromLogSource($source);
             }
         }
@@ -74,7 +83,13 @@ final class LogController
         }
 
         $enabledSourceIds = $this->getEnabledSourceIds();
-        if (!in_array($sourceId, $enabledSourceIds, true)) {
+        // Same generic message for "not enabled" and "installation-wide, blocked for
+        // this subshop" on purpose: do not give the caller an oracle that tells the
+        // two cases apart. See OXS-3132.
+        if (
+            !in_array($sourceId, $enabledSourceIds, true)
+            || !$this->isSourceAllowedForCurrentShop($sourceId)
+        ) {
             throw new \InvalidArgumentException("Source '{$sourceId}' is not enabled for sending.");
         }
 
@@ -118,6 +133,21 @@ final class LogController
             $fileInfo['modified'],
             $truncated,
         );
+    }
+
+    /**
+     * Installation-wide sources (e.g. the shared oxideshop.log) contain data from
+     * every subshop, so they are only served to the base shop's service user. A
+     * subshop's service user must never read installation-wide logs, even if the
+     * source somehow ended up enabled for that shop. See OXS-3132.
+     */
+    private function isSourceAllowedForCurrentShop(string $sourceId): bool
+    {
+        if (!$this->logCollectorService->isInstallationWideSource($sourceId)) {
+            return true;
+        }
+
+        return $this->shopFacade->getShopId() === self::BASE_SHOP_ID;
     }
 
     /**

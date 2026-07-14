@@ -38,4 +38,12 @@ interface LogCollectorServiceInterface
      * @return LogPath[]
      */
     public function getStaticPaths(): array;
+
+    /**
+     * Whether the given source id belongs to an installation-wide provider
+     * (files shared across all subshops). Static sources are never treated as
+     * installation-wide here; their scoping is handled by path validation.
+     * See OXS-3132.
+     */
+    public function isInstallationWideSource(string $sourceId): bool;
 }

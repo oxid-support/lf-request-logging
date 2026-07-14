@@ -52,6 +52,28 @@ final class TokenInvalidatorTest extends TestCase
         $this->assertCount(0, $method->getParameters());
     }
 
+    public function testInvalidateForUserIdTakesOneStringParameterAndReturnsInt(): void
+    {
+        // Id-based entry point for the User-model save hook: it must target the
+        // exact saved row, not a shop-scope-resolved user. See OXS-3133.
+        $reflection = new \ReflectionClass(TokenInvalidator::class);
+        $method = $reflection->getMethod('invalidateForUserId');
+
+        $this->assertEquals('int', $method->getReturnType()?->getName());
+        $this->assertCount(1, $method->getParameters());
+        $this->assertEquals('userId', $method->getParameters()[0]->getName());
+        $this->assertEquals('string', $method->getParameters()[0]->getType()?->getName());
+    }
+
+    public function testInvalidateForUserIdIsDeclaredOnTheInterface(): void
+    {
+        // Both entry points belong to the contract so every caller (User model,
+        // password reset) goes through the same identity-guarded service.
+        $reflection = new \ReflectionClass(TokenInvalidatorInterface::class);
+
+        $this->assertTrue($reflection->hasMethod('invalidateForUserId'));
+    }
+
     public function testConstructorDoesNotDependOnApiUserService(): void
     {
         // Intentionally no ApiUserService dependency: ApiUserService injects

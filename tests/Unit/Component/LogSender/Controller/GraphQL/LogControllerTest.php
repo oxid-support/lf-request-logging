@@ -21,6 +21,7 @@ use OxidSupport\Heartbeat\Component\LogSender\Service\LogCollectorServiceInterfa
 use OxidSupport\Heartbeat\Component\LogSender\Service\LogReaderServiceInterface;
 use OxidSupport\Heartbeat\Component\LogSender\Service\LogSenderStatusServiceInterface;
 use OxidSupport\Heartbeat\Module\Module;
+use OxidSupport\Heartbeat\Shop\Facade\ShopFacadeInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -33,6 +34,7 @@ final class LogControllerTest extends TestCase
     private LogReaderServiceInterface&MockObject $mockReader;
     private LogSenderStatusServiceInterface&MockObject $mockStatus;
     private ModuleSettingServiceInterface&MockObject $mockSettings;
+    private ShopFacadeInterface&MockObject $mockShopFacade;
 
     private string $tempDir;
     private array $tempFiles = [];
@@ -43,15 +45,20 @@ final class LogControllerTest extends TestCase
         $this->mockReader = $this->createMock(LogReaderServiceInterface::class);
         $this->mockStatus = $this->createMock(LogSenderStatusServiceInterface::class);
         $this->mockSettings = $this->createMock(ModuleSettingServiceInterface::class);
+        $this->mockShopFacade = $this->createMock(ShopFacadeInterface::class);
 
         // Default: component is active (individual tests override for inactive scenarios)
         $this->mockStatus->method('isActive')->willReturn(true);
+        // Default: base shop, so installation-wide source gating does not interfere
+        // with the existing source tests. See OXS-3132.
+        $this->mockShopFacade->method('getShopId')->willReturn(1);
 
         $this->sut = new LogController(
             $this->mockCollector,
             $this->mockReader,
             $this->mockStatus,
-            $this->mockSettings
+            $this->mockSettings,
+            $this->mockShopFacade
         );
 
         // Create temp directory for file-based tests
@@ -152,7 +159,8 @@ final class LogControllerTest extends TestCase
             $this->mockCollector,
             $this->mockReader,
             $inactiveStatus,
-            $this->mockSettings
+            $this->mockSettings,
+            $this->mockShopFacade
         );
 
         $result = $controller->logSenderSources();
@@ -462,7 +470,8 @@ final class LogControllerTest extends TestCase
             $this->mockCollector,
             $this->mockReader,
             $inactiveStatus,
-            $this->mockSettings
+            $this->mockSettings,
+            $this->mockShopFacade
         );
 
         $result = $controller->logSenderContent('any_source');
@@ -492,6 +501,73 @@ final class LogControllerTest extends TestCase
     // =========================================================================
     // Helper Methods
     // =========================================================================
+
+    public function testLogSenderContentBlocksInstallationWideSourceForSubshop(): void
+    {
+        // OXS-3132: even when the installation-wide source is enabled for a subshop,
+        // its service user must not read it. The error is the same generic
+        // "not enabled" message as a disabled source (no oracle).
+        $status = $this->createMock(LogSenderStatusServiceInterface::class);
+        $status->method('isActive')->willReturn(true);
+
+        $subshopFacade = $this->createMock(ShopFacadeInterface::class);
+        $subshopFacade->method('getShopId')->willReturn(2);
+
+        $collector = $this->createMock(LogCollectorServiceInterface::class);
+        $collector->method('isInstallationWideSource')->with('provider_oxid_core')->willReturn(true);
+
+        $settings = $this->createMock(ModuleSettingServiceInterface::class);
+        $settings->method('getCollection')->willReturn(['provider_oxid_core']);
+
+        $controller = new LogController(
+            $collector,
+            $this->mockReader,
+            $status,
+            $settings,
+            $subshopFacade
+        );
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage("Source 'provider_oxid_core' is not enabled for sending.");
+
+        $controller->logSenderContent('provider_oxid_core');
+    }
+
+    public function testLogSenderContentServesInstallationWideSourceForBaseShop(): void
+    {
+        // Companion to the block test: the base shop (id 1) is allowed to read it.
+        $path = new LogPath('/var/log/oxideshop.log', LogPathType::FILE(), 'Core');
+        $source = $this->createSourceWithPaths('provider_oxid_core', 'Core', [$path], true);
+
+        $baseShopFacade = $this->createMock(ShopFacadeInterface::class);
+        $baseShopFacade->method('getShopId')->willReturn(1);
+
+        $collector = $this->createMock(LogCollectorServiceInterface::class);
+        $collector->method('isInstallationWideSource')->willReturn(true);
+        $collector->method('getSourceById')->willReturn($source);
+
+        $settings = $this->createMock(ModuleSettingServiceInterface::class);
+        $settings->method('getCollection')->willReturn(['provider_oxid_core']);
+        $settings->method('getInteger')->willReturn(1048576);
+
+        $status = $this->createMock(LogSenderStatusServiceInterface::class);
+        $status->method('isActive')->willReturn(true);
+
+        $controller = new LogController(
+            $collector,
+            $this->mockReader,
+            $status,
+            $settings,
+            $baseShopFacade
+        );
+
+        // Reaches the reader (no "not enabled" throw); the missing file throws a
+        // different, expected error, proving the shop gate let it through.
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage("No readable file found");
+
+        $controller->logSenderContent('provider_oxid_core');
+    }
 
     private function createSource(string $id, string $name, bool $available): LogSource
     {

@@ -16,7 +16,9 @@ use OxidSupport\Heartbeat\Component\LogSender\DataType\LogSource;
 use OxidSupport\Heartbeat\Component\LogSender\Exception\LogSourceNotFoundException;
 use OxidSupport\Heartbeat\Component\LogSender\Service\LogCollectorService;
 use OxidSupport\Heartbeat\Component\LogSender\Service\LogCollectorServiceInterface;
+use OxidSupport\Heartbeat\Component\LogSender\Service\InstallationWideLogPathProviderInterface;
 use OxidSupport\Heartbeat\Component\LogSender\Service\LogPathProviderInterface;
+use OxidSupport\Heartbeat\Component\LogSender\Service\StaticPathGuardInterface;
 use OxidSupport\Heartbeat\Module\Module;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -26,12 +28,17 @@ use PHPUnit\Framework\TestCase;
 final class LogCollectorServiceTest extends TestCase
 {
     private ModuleSettingServiceInterface&MockObject $moduleSettingService;
+    private StaticPathGuardInterface&MockObject $staticPathGuard;
     private string $testDir;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->moduleSettingService = $this->createMock(ModuleSettingServiceInterface::class);
+        // Allow-all guard by default; the guard's own rejection logic is covered
+        // in StaticPathGuardTest. See OXS-3131.
+        $this->staticPathGuard = $this->createMock(StaticPathGuardInterface::class);
+        $this->staticPathGuard->method('isAllowed')->willReturn(true);
         $this->testDir = sys_get_temp_dir() . '/logcollector_test_' . uniqid();
         mkdir($this->testDir, 0777, true);
     }
@@ -46,7 +53,7 @@ final class LogCollectorServiceTest extends TestCase
 
     private function createService(array $providers = []): LogCollectorService
     {
-        return new LogCollectorService($this->moduleSettingService, $providers);
+        return new LogCollectorService($this->moduleSettingService, $this->staticPathGuard, $providers);
     }
 
     private function createMockProvider(
@@ -447,8 +454,64 @@ final class LogCollectorServiceTest extends TestCase
         $provider = $this->createMockProvider('test', 'Test', 'Desc', []);
         $traversable = new \ArrayIterator([$provider]);
 
-        $service = new LogCollectorService($this->moduleSettingService, $traversable);
+        $service = new LogCollectorService($this->moduleSettingService, $this->staticPathGuard, $traversable);
 
         $this->assertInstanceOf(LogCollectorService::class, $service);
+    }
+
+    public function testIsInstallationWideSourceTrueOnlyForMarkedProvider(): void
+    {
+        // OXS-3132: only providers marked installation-wide count; plain providers
+        // and static sources are shop-scoped and must not be treated as such.
+        // Anonymous class (not createMockForIntersectionOfInterfaces) so the test
+        // runs on every line's PHPUnit version.
+        $marked = new class implements LogPathProviderInterface, InstallationWideLogPathProviderInterface {
+            public function getLogPaths(): array
+            {
+                return [];
+            }
+            public function getProviderId(): string
+            {
+                return 'oxid_core';
+            }
+            public function getProviderName(): string
+            {
+                return 'Core';
+            }
+            public function getProviderDescription(): string
+            {
+                return '';
+            }
+            public function isActive(): bool
+            {
+                return true;
+            }
+        };
+
+        $plain = $this->createMockProvider('requestlogger', 'RL', 'Desc', []);
+
+        $service = $this->createService([$marked, $plain]);
+
+        $this->assertTrue($service->isInstallationWideSource('provider_oxid_core'));
+        $this->assertFalse($service->isInstallationWideSource('provider_requestlogger'));
+        $this->assertFalse($service->isInstallationWideSource('static_0'));
+    }
+
+    public function testGetStaticPathsDropsPathsRejectedByGuard(): void
+    {
+        // OXS-3131: cross-shop / sensitive paths are filtered out on read.
+        $this->moduleSettingService->method('getCollection')->willReturn([
+            ['path' => '/allowed/a.log', 'type' => 'file'],
+            ['path' => '/rejected/b.log', 'type' => 'file'],
+        ]);
+        $guard = $this->createMock(StaticPathGuardInterface::class);
+        $guard->method('isAllowed')->willReturnCallback(fn($p) => $p === '/allowed/a.log');
+
+        $service = new LogCollectorService($this->moduleSettingService, $guard, []);
+
+        $paths = $service->getStaticPaths();
+
+        $this->assertCount(1, $paths);
+        $this->assertSame('/allowed/a.log', $paths[0]->path);
     }
 }
