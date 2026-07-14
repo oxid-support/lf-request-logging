@@ -125,9 +125,14 @@ class LoggerFactory
 
     private function logDirectoryPath(): string
     {
+        // Per-shop subdirectory so EE subshops do not share one flat log dir.
+        // On CE the shop id is always 1, so this is a no-op there. The LogSender
+        // read path (RequestLogger LogPathProvider) mirrors this layout. See OXS-3130.
         return
             $this->facade->getLogsPath() .
             self::LOG_DIRECTORY_NAME .
+            DIRECTORY_SEPARATOR .
+            $this->facade->getShopId() .
             DIRECTORY_SEPARATOR;
     }
 
