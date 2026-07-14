@@ -344,6 +344,47 @@ final class LogControllerTest extends TestCase
         $this->assertStringContainsString('new.log', $result->getPath());
     }
 
+    /**
+     * Two shops' log directories side by side. The source points at shop 1's
+     * directory (as the shop-scoped LogPathProvider returns it); the read must
+     * never reach shop 2's sibling directory. This is the cross-shop read
+     * isolation, asserted end-to-end at the controller. See OXS-3130.
+     */
+    public function testLogSenderContentReadsOnlyItsOwnShopDirectoryNotSiblings(): void
+    {
+        mkdir($this->tempDir . '/1');
+        mkdir($this->tempDir . '/2');
+        file_put_contents($this->tempDir . '/1/oxs-request-logger-shop1.log', 'shop 1 only');
+        file_put_contents($this->tempDir . '/2/oxs-request-logger-shop2.log', 'shop 2 only');
+
+        $shop1Directory = new LogPath($this->tempDir . '/1/', LogPathType::DIRECTORY(), 'Logs', '', '*.log');
+        $source = $this->createSourceWithPaths('dir_source', 'Dir', [$shop1Directory], true);
+
+        $this->mockSettings->method('get')
+            ->willReturnMap([
+                [Module::SETTING_LOGSENDER_ENABLED_SOURCES, Module::ID, ['dir_source']],
+                [Module::SETTING_LOGSENDER_MAX_BYTES, Module::ID, 1048576],
+            ]);
+        $this->mockCollector->method('getSourceById')->willReturn($source);
+
+        // The reader must be asked for shop 1's file only, never shop 2's.
+        $this->mockReader->expects($this->once())
+            ->method('readFile')
+            ->with($this->stringContains('/1/oxs-request-logger-shop1.log'), $this->anything())
+            ->willReturn('shop 1 only');
+        $this->mockReader->method('getFileInfo')->willReturn(['size' => 11, 'modified' => time()]);
+
+        $result = $this->sut->logSenderContent('dir_source');
+
+        @unlink($this->tempDir . '/1/oxs-request-logger-shop1.log');
+        @unlink($this->tempDir . '/2/oxs-request-logger-shop2.log');
+        @rmdir($this->tempDir . '/1');
+        @rmdir($this->tempDir . '/2');
+
+        $this->assertStringContainsString('/1/oxs-request-logger-shop1.log', $result->getPath());
+        $this->assertStringNotContainsString('/2/', $result->getPath());
+    }
+
     public function testLogSenderContentThrowsWhenDirectoryIsEmpty(): void
     {
         // No files in directory
