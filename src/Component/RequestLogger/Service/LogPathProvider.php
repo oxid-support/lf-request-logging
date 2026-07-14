@@ -22,8 +22,6 @@ use OxidSupport\Heartbeat\Shop\Facade\ShopFacadeInterface;
  */
 class LogPathProvider implements LogPathProviderInterface
 {
-    private const LOG_DIRECTORY_NAME = 'oxs-request-logger';
-
     private ShopFacadeInterface $shopFacade;
     private ModuleSettingFacadeInterface $moduleSettingFacade;
 
@@ -37,13 +35,10 @@ class LogPathProvider implements LogPathProviderInterface
 
     public function getLogPaths(): array
     {
-        // Only the current shop's subdirectory, mirroring how LoggerFactory
-        // writes (oxs-request-logger/<shopId>/). Single shop-scoping point for
-        // the request logs: a subshop's service user only ever sees its own
-        // shop's files, never another subshop's. See OXS-3130.
-        $logDirectory = $this->shopFacade->getLogsPath()
-            . self::LOG_DIRECTORY_NAME . DIRECTORY_SEPARATOR
-            . $this->shopFacade->getShopId() . DIRECTORY_SEPARATOR;
+        // Only the current shop's subdirectory, from the shared single-source
+        // builder LoggerFactory also writes to. A subshop's service user thus
+        // only ever sees its own shop's files, never another subshop's. See OXS-3130.
+        $logDirectory = RequestLogDirectory::forShop($this->shopFacade);
 
         return [
             new LogPath(
