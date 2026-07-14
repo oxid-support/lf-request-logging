@@ -22,7 +22,8 @@
                     \OxidSupport\Heartbeat\Component\DiagnosticsProvider\DataType\DiagnosticsType,
                     \OxidSupport\Heartbeat\Component\DiagnosticsProvider\DataType\DiagnosticsSectionType,
                     \OxidSupport\Heartbeat\Component\LogSender\DataType\LogSourceType,
-                    \OxidSupport\Heartbeat\Component\LogSender\DataType\LogPathType
+                    \OxidSupport\Heartbeat\Component\LogSender\DataType\LogPathType,
+                    \OxidSupport\Heartbeat\Component\RequestLogger\Service\RequestLogDirectory
                 </value>
             </property>
         </properties>
