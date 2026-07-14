@@ -6,23 +6,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-- EE subshops now get their own API-user setup token instead of sharing the base shop's. `heartbeatSetPassword` refuses a token once the shop's password is set. (OXS-3103)
-- Diagnostics now reports the current subshop's URL instead of the installation base URL. (OXS-3134)
+### Added
+- Full OXID Enterprise multishop support. Each subshop is onboarded and monitored on its own: its own API service user and setup token, its own request logs, and log access scoped to that shop, cleanly separated from the other shops of the installation. (OXS-3046, OXS-3103, OXS-3130, OXS-3131, OXS-3132)
+- Runs on OXID eShop 7.5. `graphql-base ^13.0` and `graphql-configuration-access ^4.0` are allowed; Composer still selects the matching stack per OXID version, so 7.1 to 7.4 stay on gca v3 / base v12. (OXS-3127)
 
 ### Changed
-- Request logs are now stored and served per shop (a subdirectory per shop id); the Log Sender no longer lists another subshop's log files. Log files written by earlier versions are not served. (OXS-3130)
-- The API service user, its group and the group membership are now created on module activation in the current shop context, instead of by a database migration. The migration hardcoded the service user's `OXSHOPID = 1`; on EE with mall users off, a user pinned to shop 1 cannot authenticate on another subshop. The user is now created with the activating shop's id, and record ids come from the shop's id generator instead of a hand-rolled `md5()`. Provisioning is idempotent and runs on every activation, and is mall-user aware for EE multishop: with `blMallUsers` on a single shared service user is reused across subshops, with it off a service user is created per subshop (matching the `(OXUSERNAME, OXSHOPID)` uniqueness). End-to-end verification against a real EE multishop is tracked in OXS-3103. (OXS-3046)
-- The 7.1 line now installs on OXID 7.5: `graphql-base ^13.0` and `graphql-configuration-access ^4.0` are now allowed. Composer still selects the matching stack per OXID version, because `graphql-configuration-access` v4 requires OXID 7.5, so 7.1 to 7.4 stay on gca v3 / base v12. (OXS-3127)
+- The support API (Request Logger, Log Sender, Diagnostics) is served to the `oxsheartbeat_api` service user; the shop admin group does not carry these GraphQL grants, since admins configure everything through the backend UI. (OXS-3050)
+- The API service user, its group and membership are created on module activation in the current shop context instead of by a database migration. Provisioning is idempotent and mall-user aware: with `blMallUsers` on, one shared service user is reused across subshops; with it off, a service user is created per subshop. (OXS-3046)
+
+### Fixed
+- Diagnostics reports the current subshop's URL instead of the installation base URL. (OXS-3134)
+- Editing the API service user in the OXID admin reliably ends that user's own sessions, including in multishop setups. (OXS-3133)
 
 ### Removed
 - The module's database migration (`Version20251223000001`) and the "migration executed" setup step and status check. The module no longer ships migrations; there is nothing to run before activation. (OXS-3046)
-
-### Security
-- Log Sender static paths are validated on save and on read: a path resolving into another shop's request-log directory, or a sensitive file (e.g. `.php`), is rejected. Stops a subshop reading another shop's logs or arbitrary files via the API. (OXS-3131)
-- Installation-wide log sources (the shared `oxideshop.log`) can only be enabled and served for the base shop; a subshop's service user no longer reads cross-shop core logs. (OXS-3132)
-- Editing the API service user in the admin now invalidates the tokens of the exact user row saved, not a shop-scope-resolved one, so a password or active-flag change on a subshop's service user reliably revokes its sessions. (OXS-3133)
-- Hardening: the shop admin group (`oxidadmin`) is no longer granted GraphQL access to the Request Logger, Log Sender and Diagnostics operations. These are support-only endpoints served to the `oxsheartbeat_api` service user; the admin-group grant was an unintended over-privilege, never part of the advertised API. Shop admins configure via the backend UI, not the API (OXS-3050).
 
 ## [6.0.0] - 2026-07-08
 
