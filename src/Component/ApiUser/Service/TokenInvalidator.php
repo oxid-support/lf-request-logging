@@ -40,6 +40,36 @@ final class TokenInvalidator implements TokenInvalidatorInterface
             throw new UserNotFoundException();
         }
 
+        return $this->deleteTokensForUser((string) $userId);
+    }
+
+    public function invalidateForUserId(string $userId): int
+    {
+        // Verify the id belongs to the heartbeat-api user before deleting anything,
+        // so this id-based entry point cannot be used to wipe another user's tokens.
+        // We match on the exact row (no shop-scope re-resolution) so a malladmin
+        // editing a foreign subshop's service user invalidates that shop's tokens,
+        // not the admin's current-shop tokens. See OXS-3133.
+        $checkQb = $this->queryBuilderFactory->create();
+        $checkQb
+            ->select('OXID')
+            ->from('oxuser')
+            ->where('OXID = :userId')
+            ->andWhere('OXUSERNAME = :email')
+            ->setParameter('userId', $userId)
+            ->setParameter('email', Module::API_USER_EMAIL);
+
+        $found = $checkQb->execute()->fetchOne(); // @phpstan-ignore method.nonObject
+
+        if (!$found) {
+            throw new UserNotFoundException();
+        }
+
+        return $this->deleteTokensForUser($userId);
+    }
+
+    private function deleteTokensForUser(string $userId): int
+    {
         // Direct DELETE on oegraphqltoken. We intentionally bypass graphql-base's
         // TokenAdministration::customerTokensDelete because that one requires a
         // GraphQL request context (authenticated UserInterface) which we do not

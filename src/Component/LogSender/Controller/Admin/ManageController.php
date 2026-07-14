@@ -13,6 +13,7 @@ use OxidEsales\Eshop\Core\Registry;
 use OxidEsales\EshopCommunity\Internal\Container\ContainerFactory;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\ApiUserStatusServiceInterface;
 use OxidSupport\Heartbeat\Component\LogSender\Service\LogCollectorServiceInterface;
+use OxidSupport\Heartbeat\Component\LogSender\Service\StaticPathGuardInterface;
 use OxidSupport\Heartbeat\Module\Module;
 use OxidSupport\Heartbeat\Shared\Controller\Admin\AbstractComponentController;
 use OxidSupport\Heartbeat\Shared\Controller\Admin\TogglableComponentInterface;
@@ -27,6 +28,7 @@ class ManageController extends AbstractComponentController implements TogglableC
 
     private ?ApiUserStatusServiceInterface $apiUserStatusService = null;
     private ?LogCollectorServiceInterface $logCollectorService = null;
+    private ?StaticPathGuardInterface $staticPathGuard = null;
 
     public function isComponentActive(): bool
     {
@@ -131,6 +133,15 @@ class ManageController extends AbstractComponentController implements TogglableC
                 fn($id) => $id !== $sourceId
             ));
         } else {
+            // Only the base shop may enable installation-wide sources (e.g. the
+            // shared oxideshop.log); otherwise a subshop's service user could read
+            // cross-shop log data. The read path enforces this too. See OXS-3132.
+            if (
+                $this->getLogCollectorService()->isInstallationWideSource($sourceId)
+                && (int) Registry::getConfig()->getShopId() !== 1
+            ) {
+                return;
+            }
             $enabledSources[] = $sourceId;
         }
 
@@ -204,6 +215,16 @@ class ManageController extends AbstractComponentController implements TogglableC
         return $this->logCollectorService; // @phpstan-ignore return.type
     }
 
+    protected function getStaticPathGuard(): StaticPathGuardInterface
+    {
+        if ($this->staticPathGuard === null) {
+            $this->staticPathGuard = ContainerFactory::getInstance()
+                ->getContainer()
+                ->get(StaticPathGuardInterface::class);
+        }
+        return $this->staticPathGuard; // @phpstan-ignore return.type
+    }
+
     /**
      * Get static paths as text (one path per line).
      * Format: path (trailing / = directory, otherwise = file)
@@ -259,10 +280,17 @@ class ManageController extends AbstractComponentController implements TogglableC
             fn($line) => $line !== ''
         );
 
+        $guard = $this->getStaticPathGuard();
         $paths = [];
         foreach ($lines as $line) {
             $isDirectory = str_ends_with($line, '/');
             $path = rtrim($line, '/');
+
+            // Reject cross-shop / sensitive paths at save time so they never persist.
+            // The read path (LogCollectorService) enforces the same rule. See OXS-3131.
+            if (!$guard->isAllowed($isDirectory ? $path . '/' : $path)) {
+                continue;
+            }
 
             $paths[] = [
                 'path' => $isDirectory ? $path . '/' : $path,

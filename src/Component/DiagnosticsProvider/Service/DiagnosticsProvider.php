@@ -59,12 +59,20 @@ class DiagnosticsProvider implements DiagnosticsProviderInterface
         $oDiagnostics = $this->getDiagnosticsModel();
         $oSysReq = oxNew(\OxidEsales\Eshop\Core\SystemRequirements::class);
 
-        $oDiagnostics->setShopLink(Registry::getConfig()->getConfigParam('sShopURL'));
+        // Shop-aware URL: getShopUrl() resolves the current subshop's oxshops.OXURL,
+        // whereas the sShopURL config param falls back to the installation base URL
+        // for a subshop. See OXS-3134.
+        $oDiagnostics->setShopLink(Registry::getConfig()->getShopUrl());
         $oDiagnostics->setEdition(Registry::getConfig()->getFullEdition());
         $oDiagnostics->setVersion(
             oxNew(\OxidEsales\Eshop\Core\ShopVersion::class)->getVersion()
         );
 
+        // aShopDetails row counts come from the core Diagnostics model, which counts
+        // the raw oxarticles/oxuser/oxshops tables, not shop views: the figures are
+        // installation-wide, not per subshop. Left as-is on purpose; scoping them to
+        // shop views or relabelling the section in the API would change the GraphQL
+        // contract shared with the dashboard and must be coordinated there. See OXS-3134.
         $aResults["aShopDetails"]   = $oDiagnostics->getShopDetails();
 
         $aResults["aModuleList"] = $this->getModuleList();

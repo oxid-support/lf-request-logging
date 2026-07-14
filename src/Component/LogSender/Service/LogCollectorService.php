@@ -30,6 +30,7 @@ final class LogCollectorService implements LogCollectorServiceInterface
      */
     public function __construct(
         private readonly ModuleSettingServiceInterface $moduleSettingService,
+        private readonly StaticPathGuardInterface $staticPathGuard,
         iterable $providers
     ) {
         $this->providers = $providers instanceof \Traversable
@@ -114,6 +115,13 @@ final class LogCollectorService implements LogCollectorServiceInterface
                 continue;
             }
 
+            // Drop paths that point into another shop's request logs or at sensitive
+            // files, so a per-shop setting cannot become a cross-shop / arbitrary
+            // file read for the shop's service user. See OXS-3131.
+            if (!$this->staticPathGuard->isAllowed((string) $config['path'])) {
+                continue;
+            }
+
             $type = LogPathType::tryFrom($config['type']);
             if ($type === null) {
                 continue;
@@ -129,6 +137,20 @@ final class LogCollectorService implements LogCollectorServiceInterface
         }
 
         return $paths;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function isInstallationWideSource(string $sourceId): bool
+    {
+        foreach ($this->providers as $provider) {
+            if ('provider_' . $provider->getProviderId() === $sourceId) {
+                return $provider instanceof InstallationWideLogPathProviderInterface;
+            }
+        }
+
+        return false;
     }
 
     /**
