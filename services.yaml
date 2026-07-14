@@ -192,6 +192,10 @@ services:
         arguments:
             $providers: !tagged_iterator 'oxs.heartbeat.provider'
 
+    OxidSupport\Heartbeat\Component\LogSender\Service\StaticPathGuardInterface:
+        class: OxidSupport\Heartbeat\Component\LogSender\Service\StaticPathGuard
+        public: true
+
     # Component: LogSender - Built-in Providers
     OxidSupport\Heartbeat\Component\LogSender\Service\OxidCoreLogPathProvider:
         tags:

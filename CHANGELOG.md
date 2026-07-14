@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - EE subshops now get their own API-user setup token instead of sharing the base shop's. `heartbeatSetPassword` refuses a token once the shop's password is set. (OXS-3103)
+- Diagnostics now reports the current subshop's URL instead of the installation base URL. (OXS-3134)
 
 ### Changed
 - Request logs are now stored and served per shop (a subdirectory per shop id); the Log Sender no longer lists another subshop's log files. Log files written by earlier versions are not served. (OXS-3130)
@@ -17,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The module's database migration (`Version20251223000001`) and the "migration executed" setup step and status check. The module no longer ships migrations; there is nothing to run before activation. (OXS-3046)
 
 ### Security
+- Log Sender static paths are validated on save and on read: a path resolving into another shop's request-log directory, or a sensitive file (e.g. `.php`), is rejected. Stops a subshop reading another shop's logs or arbitrary files via the API. (OXS-3131)
+- Installation-wide log sources (the shared `oxideshop.log`) can only be enabled and served for the base shop; a subshop's service user no longer reads cross-shop core logs. (OXS-3132)
+- Editing the API service user in the admin now invalidates the tokens of the exact user row saved, not a shop-scope-resolved one, so a password or active-flag change on a subshop's service user reliably revokes its sessions. (OXS-3133)
 - Hardening: the shop admin group (`oxidadmin`) is no longer granted GraphQL access to the Request Logger, Log Sender and Diagnostics operations. These are support-only endpoints served to the `oxsheartbeat_api` service user; the admin-group grant was an unintended over-privilege, never part of the advertised API. Shop admins configure via the backend UI, not the API (OXS-3050).
 
 ## [4.0.0] - 2026-07-08

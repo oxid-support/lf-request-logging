@@ -99,7 +99,10 @@ class User extends User_parent
         try {
             $container = ContainerFactory::getInstance()->getContainer();
             $invalidator = $container->get(TokenInvalidatorInterface::class);
-            $invalidator->invalidateForApiUser();
+            // Invalidate the exact row being saved, not a shop-scope-resolved user:
+            // editing a foreign subshop's service user must kill that shop's tokens,
+            // not the admin's current-shop tokens. See OXS-3133.
+            $invalidator->invalidateForUserId((string) $this->getId());
         } catch (\Throwable $e) {
             // Swallow: container may not be fully bootstrapped during early
             // save calls (e.g. user creation in the activation hook), and we

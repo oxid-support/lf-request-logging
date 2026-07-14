@@ -19,7 +19,9 @@ use OxidSupport\Heartbeat\Shop\Facade\ShopFacadeInterface;
  * This provider is always active and dynamically determines the log path
  * based on the shop's configuration (sShopDir from config.inc.php).
  */
-final class OxidCoreLogPathProvider implements LogPathProviderInterface
+final class OxidCoreLogPathProvider implements
+    LogPathProviderInterface,
+    InstallationWideLogPathProviderInterface
 {
     private const LOG_FILENAME = 'oxideshop.log';
 

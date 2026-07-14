@@ -22,17 +22,23 @@ use OxidSupport\Heartbeat\Module\Module;
 final class LogCollectorService implements LogCollectorServiceInterface
 {
     private ModuleSettingBridgeInterface $moduleSettingService;
+    private StaticPathGuardInterface $staticPathGuard;
 
     /** @var LogPathProviderInterface[] */
     private array $providers;
 
     /**
      * @param ModuleSettingBridgeInterface $moduleSettingService
+     * @param StaticPathGuardInterface $staticPathGuard
      * @param iterable<LogPathProviderInterface> $providers Injected via !tagged_iterator
      */
-    public function __construct(ModuleSettingBridgeInterface $moduleSettingService, iterable $providers)
-    {
+    public function __construct(
+        ModuleSettingBridgeInterface $moduleSettingService,
+        StaticPathGuardInterface $staticPathGuard,
+        iterable $providers
+    ) {
         $this->moduleSettingService = $moduleSettingService;
+        $this->staticPathGuard = $staticPathGuard;
         $this->providers = $providers instanceof \Traversable
             ? iterator_to_array($providers)
             : (array) $providers;
@@ -115,6 +121,13 @@ final class LogCollectorService implements LogCollectorServiceInterface
                 continue;
             }
 
+            // Drop paths that point into another shop's request logs or at sensitive
+            // files, so a per-shop setting cannot become a cross-shop / arbitrary
+            // file read for the shop's service user. See OXS-3131.
+            if (!$this->staticPathGuard->isAllowed((string) $config['path'])) {
+                continue;
+            }
+
             $type = LogPathType::tryFrom($config['type']);
             if ($type === null) {
                 continue;
@@ -130,6 +143,20 @@ final class LogCollectorService implements LogCollectorServiceInterface
         }
 
         return $paths;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function isInstallationWideSource(string $sourceId): bool
+    {
+        foreach ($this->providers as $provider) {
+            if ('provider_' . $provider->getProviderId() === $sourceId) {
+                return $provider instanceof InstallationWideLogPathProviderInterface;
+            }
+        }
+
+        return false;
     }
 
     /**
