@@ -10,14 +10,13 @@ use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use OxidSupport\Heartbeat\Component\RequestLogger\Infrastructure\Logger\CorrelationId\CorrelationIdProviderInterface;
 use OxidSupport\Heartbeat\Component\RequestLogger\Infrastructure\Logger\Processor\CorrelationIdProcessorInterface;
+use OxidSupport\Heartbeat\Component\RequestLogger\Service\RequestLogDirectory;
 use OxidSupport\Heartbeat\Module\Module;
 use OxidSupport\Heartbeat\Shop\Facade\ModuleSettingFacadeInterface;
 use OxidSupport\Heartbeat\Shop\Facade\ShopFacadeInterface;
 
 class LoggerFactory
 {
-    private const LOG_DIRECTORY_NAME = 'oxs-request-logger';
-
     private CorrelationIdProcessorInterface $correlationIdProcessor;
     private CorrelationIdProviderInterface $correlationIdProvider;
     private ShopFacadeInterface $facade;
@@ -93,7 +92,7 @@ class LoggerFactory
         // Only allow alphanumeric characters, hyphens, and underscores
         $sanitizedFilename = $this->sanitizeFilename($filename);
 
-        $filename = sprintf('%s-%s.log', self::LOG_DIRECTORY_NAME, $sanitizedFilename);
+        $filename = sprintf('%s-%s.log', RequestLogDirectory::NAME, $sanitizedFilename);
 
         return $dir . $filename;
     }
@@ -125,15 +124,9 @@ class LoggerFactory
 
     private function logDirectoryPath(): string
     {
-        // Per-shop subdirectory so EE subshops do not share one flat log dir.
-        // On CE the shop id is always 1, so this is a no-op there. The LogSender
-        // read path (RequestLogger LogPathProvider) mirrors this layout. See OXS-3130.
-        return
-            $this->facade->getLogsPath() .
-            self::LOG_DIRECTORY_NAME .
-            DIRECTORY_SEPARATOR .
-            $this->facade->getShopId() .
-            DIRECTORY_SEPARATOR;
+        // Per-shop directory via the shared single-source builder, so the writer
+        // here and the LogSender read path (LogPathProvider) can never diverge.
+        return RequestLogDirectory::forShop($this->facade);
     }
 
     private function ensureLogDirectoryExists(string $dir): void
