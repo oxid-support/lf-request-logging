@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.1.0] - 2026-07-14
+
 ### Added
 - Full OXID Enterprise multishop support. Each subshop is onboarded and monitored on its own: its own API service user and setup token, its own request logs, and log access scoped to that shop, cleanly separated from the other shops of the installation. (OXS-3046, OXS-3103, OXS-3130, OXS-3131, OXS-3132)
 - Runs on OXID eShop 7.5. `graphql-base ^13.0` and `graphql-configuration-access ^4.0` are allowed; Composer still selects the matching stack per OXID version, so 7.1 to 7.4 stay on gca v3 / base v12. (OXS-3127)
