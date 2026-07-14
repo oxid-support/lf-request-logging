@@ -133,7 +133,7 @@ $aLang = [
     'OXSHEARTBEAT_LOGSENDER_HOWTO_PROVIDER' => 'DI Tag Provider',
     'OXSHEARTBEAT_LOGSENDER_HOWTO_PROVIDER_DESC' => 'Services implement LogPathProviderInterface and are registered with the tag "oxs.logsender.provider".',
     'OXSHEARTBEAT_LOGSENDER_HOWTO_STATIC' => 'Static Paths',
-    'OXSHEARTBEAT_LOGSENDER_HOWTO_STATIC_DESC' => 'Paths are configured directly in the module settings (for third-party logs).',
+    'OXSHEARTBEAT_LOGSENDER_HOWTO_STATIC_DESC' => 'Paths are configured directly in the module settings (for third-party logs). These paths are installation-wide and cover all subshops, unlike the per-shop request log.',
 
     // Log Sender - Static Paths Configuration
     'OXSHEARTBEAT_LOGSENDER_STATIC_TITLE' => 'Static Log Paths',
