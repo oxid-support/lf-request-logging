@@ -71,27 +71,10 @@
             "dealerdirect/phpcodesniffer-composer-installer": true
         },
         "audit": {
-            "ignore": [
-                "PKSA-hjpv-ct4c-8fq5",
-                "PKSA-xwpn-zs9j-6wy5",
-                "PKSA-sf9j-1gs7-xzvx",
-                "PKSA-7h5p-prw9-w5nr",
-                "PKSA-2q9d-8kh9-49wx",
-                "PKSA-pght-23ww-rrdy",
-                "PKSA-6y8p-nrf4-ysf5",
-                "PKSA-yr6f-z9sx-cps3",
-                "PKSA-28zg-9h7g-fhvp",
-                "PKSA-54c6-f9b9-7wg4",
-                "PKSA-wy1k-8qg5-z8xd",
-                "PKSA-31hv-m6rg-8ryk",
-                "PKSA-98zc-53yc-qt81",
-                "PKSA-t4kv-1sv2-1mzx",
-                "PKSA-wc9h-gs49-76tm",
-                "PKSA-thph-wfk6-pp4j",
-                "PKSA-hgp5-21g7-7phg",
-                "PKSA-zw1q-6h4d-mf1m",
-                "PKSA-mz8k-7h5s-m8kh"
-            ]
+            "ignore": {
+                "smarty/smarty": "smarty 2.6 comes in transitively through oxideshop-ce -> oxideshop-unified-namespace-generator and has no fixed 2.x release, so it is ignored by package name: an advisory id list turns every new smarty 2.6 advisory into a red CI run. The dependency belongs to the shop core, not to this module.",
+                "webonyx/graphql-php": "webonyx/graphql-php 14.x comes in through graphql-base -> graphqlite 5 and has no fixed 14.x release, so it is ignored by package name as well. Leaving this line's graphql-base major is a shop compatibility decision, not a module one. Any other package with an advisory still blocks the install."
+            }
         }
     }
 }
