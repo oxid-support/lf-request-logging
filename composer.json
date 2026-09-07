@@ -78,7 +78,9 @@
         "audit": {
             "ignore": {
                 "smarty/smarty": "smarty 2.6 comes in transitively through oxideshop-ce -> oxideshop-unified-namespace-generator and has no fixed 2.x release, so it is ignored by package name: an advisory id list turns every new smarty 2.6 advisory into a red CI run. The dependency belongs to the shop core, not to this module.",
-                "webonyx/graphql-php": "webonyx/graphql-php 14.x comes in through graphql-base -> graphqlite 5 and has no fixed 14.x release, so it is ignored by package name as well. Leaving this line's graphql-base major is a shop compatibility decision, not a module one. Any other package with an advisory still blocks the install."
+                "PKSA-xwpn-zs9j-6wy5": "webonyx/graphql-php 14.x comes in through graphql-base -> graphqlite 5 and has no fixed 14.x release. Ignored per advisory id and NOT per package name on purpose: this module ships the /graphql endpoint, so a new advisory for the parser has to turn CI red and reach a decision instead of passing unseen.",
+                "PKSA-sf9j-1gs7-xzvx": "webonyx/graphql-php 14.x comes in through graphql-base -> graphqlite 5 and has no fixed 14.x release. Ignored per advisory id and NOT per package name on purpose: this module ships the /graphql endpoint, so a new advisory for the parser has to turn CI red and reach a decision instead of passing unseen.",
+                "PKSA-7h5p-prw9-w5nr": "webonyx/graphql-php 14.x comes in through graphql-base -> graphqlite 5 and has no fixed 14.x release. Ignored per advisory id and NOT per package name on purpose: this module ships the /graphql endpoint, so a new advisory for the parser has to turn CI red and reach a decision instead of passing unseen."
             }
         }
     }

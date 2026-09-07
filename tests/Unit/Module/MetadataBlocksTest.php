@@ -56,6 +56,15 @@ class MetadataBlocksTest extends TestCase
             self::readWithoutComments(self::MODULE_ROOT . '/' . $file),
             sprintf('%s must render $smarty.block.parent, otherwise no module can be configured', $file)
         );
+        $this->assertSame(
+            1,
+            substr_count((string) file_get_contents(self::MODULE_ROOT . '/' . $file), '$smarty.block.parent'),
+            sprintf(
+                '%s must carry the parent tag exactly once: the prefilter replaces every occurrence, '
+                . 'so a second one (a comment included) injects the core block twice',
+                $file
+            )
+        );
     }
 
     /**
@@ -75,6 +84,15 @@ class MetadataBlocksTest extends TestCase
             '$smarty.block.parent',
             self::readWithoutComments(self::MODULE_ROOT . '/' . $file),
             sprintf('%s must render $smarty.block.parent, otherwise the admin menu is empty', $file)
+        );
+        $this->assertSame(
+            1,
+            substr_count((string) file_get_contents(self::MODULE_ROOT . '/' . $file), '$smarty.block.parent'),
+            sprintf(
+                '%s must carry the parent tag exactly once: the prefilter replaces every occurrence, '
+                . 'so a second one (a comment included) injects the core block twice',
+                $file
+            )
         );
     }
 
