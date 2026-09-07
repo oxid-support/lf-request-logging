@@ -180,4 +180,10 @@ $aLang = [
     'OXSHEARTBEAT_DIAGNOSTICSPROVIDER_INFO_SYSTEM' => 'System Information',
     'OXSHEARTBEAT_DIAGNOSTICSPROVIDER_INFO_PHP' => 'PHP Configuration',
     'OXSHEARTBEAT_DIAGNOSTICSPROVIDER_INFO_SERVER' => 'Server Information',
+
+    // ==========================================================================
+    // Module Configuration Page
+    // ==========================================================================
+    'OXSHEARTBEAT_MODULE_CONFIG_HINT' => 'Settings and setup for this module are in the left menu under "OXS :: Heartbeat", specifically the entry',
+    'OXSHEARTBEAT_MODULE_CONFIG_HINT_LINK' => 'API User',
 ];

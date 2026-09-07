@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- The module settings page in the admin area showed no input fields at all, for any installed module. The module registered a template block for `module_config.tpl` that pointed at an empty file, which replaced the core settings form with nothing. The block renders the core form again and puts a hint above it: the Heartbeat settings live in the left menu under "OXS :: Heartbeat", with a link to the "API User" page.
+
 ## [4.1.0] - 2026-07-14
 
 ### Added
