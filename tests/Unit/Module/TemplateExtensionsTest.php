@@ -45,8 +45,8 @@ class TemplateExtensionsTest extends TestCase
 
     /**
      * The core "admin_module_config_form" block holds the settings form of every
-     * module, so this extension has to fall back to parent() for the modules it
-     * does not render its own content for.
+     * module, so this block has to fall back to parent() for the modules it does
+     * not render its own content for.
      */
     public function testModuleConfigExtensionRendersTheCoreForm(): void
     {
@@ -58,10 +58,19 @@ class TemplateExtensionsTest extends TestCase
         $this->assertNotEmpty($files, 'No module_config extension found');
 
         foreach ($files as $file) {
+            $body = self::readBlockBody(self::EXTENSIONS_DIR . '/' . $file, 'admin_module_config_form');
+
+            $this->assertNotNull(
+                $body,
+                sprintf('%s no longer overrides admin_module_config_form, check whether that is intended', $file)
+            );
             $this->assertStringContainsString(
                 'parent()',
-                (string) file_get_contents(self::EXTENSIONS_DIR . '/' . $file),
-                sprintf('%s must render parent(), otherwise no module can be configured', $file)
+                (string) $body,
+                sprintf(
+                    'Block admin_module_config_form in %s must render parent(), otherwise no module can be configured',
+                    $file
+                )
             );
         }
     }
@@ -88,5 +97,20 @@ class TemplateExtensionsTest extends TestCase
         ksort($cases);
 
         return $cases;
+    }
+
+    /**
+     * Returns the body of one block, or null when the file does not override it.
+     * Only that block's own body counts: a parent() call in a sibling block of
+     * the same file says nothing about this one.
+     */
+    private static function readBlockBody(string $path, string $name): ?string
+    {
+        $pattern = sprintf(
+            '/\{%%\s*block\s+%s\s*%%\}(.*?)\{%%\s*endblock(?:\s+[A-Za-z0-9_]+)?\s*%%\}/s',
+            preg_quote($name, '/')
+        );
+
+        return preg_match($pattern, (string) file_get_contents($path), $matches) === 1 ? $matches[1] : null;
     }
 }
