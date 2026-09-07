@@ -76,7 +76,10 @@
             "dealerdirect/phpcodesniffer-composer-installer": true
         },
         "audit": {
-            "block-insecure": false
+            "ignore": {
+                "smarty/smarty": "smarty 2.6 comes in transitively through oxideshop-ce -> oxideshop-unified-namespace-generator and has no fixed 2.x release, so it is ignored by package name: an advisory id list turns every new smarty 2.6 advisory into a red CI run. The dependency belongs to the shop core, not to this module.",
+                "webonyx/graphql-php": "webonyx/graphql-php 14.x comes in through graphql-base -> graphqlite 5 and has no fixed 14.x release, so it is ignored by package name as well. Leaving this line's graphql-base major is a shop compatibility decision, not a module one. Any other package with an advisory still blocks the install."
+            }
         }
     }
 }
