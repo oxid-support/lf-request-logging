@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OxidSupport\Heartbeat\Tests\Unit\Module;
 
 use PHPUnit\Framework\Attributes\DataProvider;
+use OxidSupport\Heartbeat\Module\Module;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -68,6 +69,32 @@ class TemplateExtensionsTest extends TestCase
                     'Block admin_module_config_form in %s must render parent(), otherwise no module can be configured',
                     $file
                 )
+            );
+        }
+    }
+
+    /**
+     * The block compares the module id as a literal, twig's constant() would need
+     * the fully qualified class name as a string and buys nothing over this. The
+     * assertion pins the literal to Module::ID: renaming the constant would
+     * otherwise leave a hint that never shows again, with nothing failing.
+     */
+    public function testModuleConfigExtensionComparesAgainstTheModuleId(): void
+    {
+        $files = array_filter(
+            array_keys(self::extensionProvider()),
+            static fn (string $file): bool => basename($file) === 'module_config.html.twig'
+        );
+
+        $this->assertNotEmpty($files, 'No module_config extension found');
+
+        foreach ($files as $file) {
+            $body = self::readBlockBody(self::EXTENSIONS_DIR . '/' . $file, 'admin_module_config_form');
+
+            $this->assertStringContainsString(
+                "== '" . Module::ID . "'",
+                (string) $body,
+                sprintf('%s must compare getEditObjectId() against Module::ID (%s)', $file, Module::ID)
             );
         }
     }
