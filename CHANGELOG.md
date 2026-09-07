@@ -6,8 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- A hint on the module's own settings page points to the "API User" page in the left menu, where the Heartbeat settings are configured.
+
 ### Fixed
-- The module settings page in the admin area showed no input fields at all, for any installed module. The module registered a template block for `module_config.tpl` that pointed at an empty file, which replaced the core settings form with nothing. The block renders the core form again and puts a hint above it: the Heartbeat settings live in the left menu under "OXS :: Heartbeat", with a link to the "API User" page. Note when updating: block files are spliced into the compiled template, and smarty only checks the mtime of the main template, so clear `source/tmp` or reactivate the module after updating; otherwise the cached template keeps the empty block.
+- The settings page of every installed module showed no input fields, because the module registered a template block for `module_config.tpl` that pointed at an empty file (clear `source/tmp` or reactivate the module after updating, the compiled template does not track block files).
 
 ## [4.1.0] - 2026-07-14
 
