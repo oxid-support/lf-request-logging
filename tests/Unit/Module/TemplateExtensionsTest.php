@@ -95,9 +95,14 @@ class TemplateExtensionsTest extends TestCase
             $body = self::readBlockBody(self::EXTENSIONS_DIR . '/' . $file, 'admin_module_config_form');
 
             $this->assertStringContainsString(
-                "== '" . Module::ID . "'",
+                'getEditObjectId()',
                 (string) $body,
-                sprintf('%s must compare getEditObjectId() against Module::ID (%s)', $file, Module::ID)
+                sprintf('%s must read the shown module through getEditObjectId()', $file)
+            );
+            $this->assertStringContainsString(
+                "'" . Module::ID . "'",
+                (string) $body,
+                sprintf('%s must compare against Module::ID (%s)', $file, Module::ID)
             );
         }
     }
