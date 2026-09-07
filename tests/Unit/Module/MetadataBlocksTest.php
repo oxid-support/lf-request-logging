@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OxidSupport\Heartbeat\Tests\Unit\Module;
 
+use OxidSupport\Heartbeat\Module\Module;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -64,6 +65,27 @@ class MetadataBlocksTest extends TestCase
                 . 'so a second one (a comment included) injects the core block twice',
                 $file
             )
+        );
+    }
+
+    /**
+     * Smarty 2 cannot read a class constant, so the block compares the module id
+     * as a literal. This pins that literal to Module::ID: renaming the constant
+     * would otherwise leave a hint that never shows again, with nothing failing.
+     */
+    public function testModuleConfigBlockComparesAgainstTheModuleId(): void
+    {
+        $file = $this->findBlockFile('module_config.tpl', 'admin_module_config_form');
+
+        if ($file === null) {
+            $this->assertTrue(true, 'No module_config block registered');
+            return;
+        }
+
+        $this->assertStringContainsString(
+            "== '" . Module::ID . "'",
+            self::readWithoutComments(self::MODULE_ROOT . '/' . $file),
+            sprintf('%s must compare getEditObjectId() against Module::ID (%s)', $file, Module::ID)
         );
     }
 
