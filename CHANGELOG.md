@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A hint on the module's own settings page points to the "API User" page in the left menu, where the Heartbeat settings are configured.
 
 ### Fixed
-- The settings page of every installed module showed no input fields, because the module registered a template block for `module_config.tpl` that pointed at an empty file (clear `source/tmp` or reactivate the module after updating, the compiled template does not track block files).
+- The settings page of every installed module showed no input fields, because the module registered a template block for `module_config.tpl` that pointed at an empty file.
 
 ## [4.1.0] - 2026-07-14
 
