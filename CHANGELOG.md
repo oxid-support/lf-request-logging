@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.1.1] - 2026-09-07
+
 ### Added
 - A hint on the module's own settings page points to the "API User" page in the left menu, where the Heartbeat settings are configured.
 
