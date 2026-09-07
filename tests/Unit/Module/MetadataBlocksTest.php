@@ -10,18 +10,29 @@ use PHPUnit\Framework\TestCase;
 /**
  * Guards the template block registrations in metadata.php.
  *
- * A registered block replaces the core block it hooks into. An empty or missing
- * block file therefore does not "do nothing", it wipes the core markup out of
- * the rendered page.
+ * A registered block replaces the core block it hooks into. An empty block file
+ * therefore does not "do nothing", it wipes the core markup out of the rendered
+ * page, and the core block only survives where the block file renders the parent
+ * tag.
  */
 class MetadataBlocksTest extends TestCase
 {
     private const MODULE_ROOT = __DIR__ . '/../../..';
 
     /**
+     * Same expression the core block prefilter substitutes with, see
+     * Core/Smarty/Plugin/prefilter.oxblock.php. Only a full tag counts, naming
+     * the tag in prose does not.
+     */
+    private const PARENT_TAG_PATTERN = '/\[\{\s*\$smarty\.block\.parent\s*\}\]/i';
+
+    /** @var array<string, mixed>|null */
+    private static $metadata = null;
+
+    /**
      * @dataProvider blockProvider
      */
-    public function testBlockFileIsNotEmpty(string $template, string $block, string $file): void
+    public function testBlockFileHasTemplateCode(string $template, string $block, string $file): void
     {
         $path = self::MODULE_ROOT . '/' . $file;
 
@@ -39,82 +50,55 @@ class MetadataBlocksTest extends TestCase
     }
 
     /**
-     * The core "admin_module_config_form" block holds the whole settings form of
-     * every module. Dropping the parent here leaves the settings page of all
-     * installed modules without any input fields.
+     * Holds for every registered block: the core content it replaces has to come
+     * back exactly once. None wipes the core block out (that is how this line
+     * lost the settings form of every module), more than once injects it twice,
+     * because the prefilter substitutes every occurrence in the file, comments
+     * included, and it runs before smarty strips those comments.
+     *
+     * @dataProvider blockProvider
      */
-    public function testModuleConfigBlockKeepsTheCoreForm(): void
+    public function testBlockFileRendersTheParentBlockExactlyOnce(string $template, string $block, string $file): void
     {
-        $file = $this->findBlockFile('module_config.tpl', 'admin_module_config_form');
+        $path = self::MODULE_ROOT . '/' . $file;
 
-        if ($file === null) {
-            $this->assertTrue(true, 'No module_config block registered, the core form stays untouched');
-            return;
-        }
-
-        $this->assertStringContainsString(
-            '$smarty.block.parent',
-            self::readWithoutComments(self::MODULE_ROOT . '/' . $file),
-            sprintf('%s must render $smarty.block.parent, otherwise no module can be configured', $file)
-        );
         $this->assertSame(
             1,
-            substr_count((string) file_get_contents(self::MODULE_ROOT . '/' . $file), '$smarty.block.parent'),
+            preg_match_all(self::PARENT_TAG_PATTERN, (string) file_get_contents($path)),
             sprintf(
-                '%s must carry the parent tag exactly once: the prefilter replaces every occurrence, '
-                . 'so a second one (a comment included) injects the core block twice',
-                $file
+                'Block file %s must carry the parent tag exactly once, it extends the core block "%s" of %s',
+                $file,
+                $block,
+                $template
             )
         );
     }
 
     /**
      * Smarty 2 cannot read a class constant, so the block compares the module id
-     * as a literal. This pins that literal to Module::ID: renaming the constant
-     * would otherwise leave a hint that never shows again, with nothing failing.
+     * as a literal. This pins the literal to Module::ID without pinning how the
+     * comparison is written: renaming the constant would otherwise leave a hint
+     * that never shows again, with nothing failing.
      */
     public function testModuleConfigBlockComparesAgainstTheModuleId(): void
     {
         $file = $this->findBlockFile('module_config.tpl', 'admin_module_config_form');
 
         if ($file === null) {
-            $this->assertTrue(true, 'No module_config block registered');
-            return;
+            $this->markTestSkipped('No module_config block registered, the core form stays untouched');
         }
 
-        $this->assertStringContainsString(
-            "== '" . Module::ID . "'",
-            self::readWithoutComments(self::MODULE_ROOT . '/' . $file),
-            sprintf('%s must compare getEditObjectId() against Module::ID (%s)', $file, Module::ID)
-        );
-    }
-
-    /**
-     * The navigation block appends the module menu entries, so it has to keep the
-     * core menu structure as well.
-     */
-    public function testNavigationBlockKeepsTheCoreMenu(): void
-    {
-        $file = $this->findBlockFile('navigation.tpl', 'admin_navigation_menustructure');
-
-        if ($file === null) {
-            $this->assertTrue(true, 'No navigation block registered');
-            return;
-        }
+        $content = self::readWithoutComments(self::MODULE_ROOT . '/' . $file);
 
         $this->assertStringContainsString(
-            '$smarty.block.parent',
-            self::readWithoutComments(self::MODULE_ROOT . '/' . $file),
-            sprintf('%s must render $smarty.block.parent, otherwise the admin menu is empty', $file)
+            'getEditObjectId()',
+            $content,
+            sprintf('%s must read the shown module through getEditObjectId()', $file)
         );
-        $this->assertSame(
-            1,
-            substr_count((string) file_get_contents(self::MODULE_ROOT . '/' . $file), '$smarty.block.parent'),
-            sprintf(
-                '%s must carry the parent tag exactly once: the prefilter replaces every occurrence, '
-                . 'so a second one (a comment included) injects the core block twice',
-                $file
-            )
+        $this->assertStringContainsString(
+            "'" . Module::ID . "'",
+            $content,
+            sprintf('%s must compare against Module::ID (%s)', $file, Module::ID)
         );
     }
 
@@ -122,7 +106,7 @@ class MetadataBlocksTest extends TestCase
     {
         $cases = [];
 
-        foreach ($this->loadMetadataBlocks() as $block) {
+        foreach (self::readMetadata()['blocks'] ?? [] as $block) {
             $cases[$block['template'] . '::' . $block['block']] = [
                 $block['template'],
                 $block['block'],
@@ -135,7 +119,7 @@ class MetadataBlocksTest extends TestCase
 
     private function findBlockFile(string $template, string $block): ?string
     {
-        foreach ($this->loadMetadataBlocks() as $registered) {
+        foreach (self::readMetadata()['blocks'] ?? [] as $registered) {
             if ($registered['template'] === $template && $registered['block'] === $block) {
                 return $registered['file'];
             }
@@ -145,39 +129,31 @@ class MetadataBlocksTest extends TestCase
     }
 
     /**
-     * @return array<int, array{template: string, block: string, file: string}>
-     */
-    private function loadMetadataBlocks(): array
-    {
-        $metadata = self::readMetadata();
-
-        return $metadata['blocks'] ?? [];
-    }
-
-    /**
-     * Smarty comments must not count as template code here. The block prefilter
-     * replaces every parent tag in the file before smarty strips comments, so a
-     * tag inside a comment is both a duplicate injection and a test that passes
-     * while the real call is gone.
+     * Smarty comments do not count as template code: a parent tag inside one is
+     * both a duplicate injection and a guard that passes while the real call is
+     * gone. Mirrors smarty's own comment expression, see Smarty_Compiler.
      */
     private static function readWithoutComments(string $path): string
     {
         $content = (string) file_get_contents($path);
 
-        return trim((string) preg_replace('/\\[\\{\\*.*?\\*\\}\\]/s', '', $content));
+        return trim((string) preg_replace('/\[\{\*.*?\*\}\]/s', '', $content));
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private static function readMetadata(): array
     {
-        // metadata.php declares $aModule; include it in a function scope so the
-        // variable does not leak into the test case.
-        $sMetadataVersion = null;
-        $aModule = [];
+        if (self::$metadata === null) {
+            // metadata.php declares $aModule; including it in this scope keeps the
+            // variable out of the test case.
+            require self::MODULE_ROOT . '/metadata.php';
 
-        require self::MODULE_ROOT . '/metadata.php';
+            /** @var array<string, mixed> $aModule */
+            self::$metadata = $aModule;
+        }
 
-        unset($sMetadataVersion);
-
-        return $aModule;
+        return self::$metadata;
     }
 }

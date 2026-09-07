@@ -66,19 +66,12 @@ jobs:
         # lock hash. No broad restore-keys fallback (it would restore a stale vendor).
         key: ${{ runner.os }}-php-${{ matrix.php-version }}-${{ hashFiles('**/composer.json') }}
 
-    # PHP 7.4 and 8.0 cannot install dev deps (phpunit 10+ requires PHP 8.1+).
-    # Only verify Composer resolve + PHP lint on those matrix entries.
-    - name: Install dependencies (no-dev, PHP 8.0)
-      if: matrix.php-version == '8.0'
+    # 7.4 and 8.0 only prove that the tree resolves and the sources lint;
+    # static analysis and the unit suite run on 8.1. The 7.4 resolve depends on
+    # the laminas-diactoros advisory listed in composer.json, see the reason there.
+    - name: Install dependencies (no-dev, PHP 7.4 / 8.0)
+      if: matrix.php-version == '7.4' || matrix.php-version == '8.0'
       run: composer install --prefer-dist --no-progress --no-dev
-
-    # PHP 7.4 needs security blocking off on top: the only laminas-diactoros
-    # versions that still run on 7.4 carry advisories with no fix inside the 2.x
-    # range graphql-base 7 allows, so blocking leaves nothing installable here.
-    # The exemption stays on this job; 8.0 and 8.1 resolve under the normal policy.
-    - name: Install dependencies (no-dev, PHP 7.4)
-      if: matrix.php-version == '7.4'
-      run: composer install --prefer-dist --no-progress --no-dev --no-security-blocking
 
     - name: Install dependencies (full, PHP 8.1+)
       if: matrix.php-version == '8.1'

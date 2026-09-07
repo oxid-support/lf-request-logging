@@ -6,8 +6,10 @@
     the form with its own output and no module can be configured in the admin
     any more. Only add markup around that call, never instead of it.
 
-    Do not write the parent tag inside a comment: the block prefilter replaces
-    every occurrence in this file, comments included, before smarty strips them.
+    The $smarty.block.parent tag must appear exactly once in this file as a
+    full tag, comments included: the block prefilter replaces every occurrence
+    it finds, and it runs before smarty strips comments. Naming it in prose
+    like this line does is fine, wrapping it in the tag delimiters is not.
 
     The module id is compared through getEditObjectId(), which every admin
     controller carries, and not through a method of this module's own
@@ -18,8 +20,12 @@
     <div style="margin-bottom: 20px; padding: 15px; background: #e3f2fd; border: 1px solid #2196f3; border-radius: 4px;">
         <p style="margin: 0;">
             [{oxmultilang ident="OXSHEARTBEAT_MODULE_CONFIG_HINT"}]
-            <a href="#"
-               onclick="top.basefrm.location='[{$oViewConf->getSelfLink()|replace:"&amp;":"&"}]&cl=heartbeat_apiuser_setup'; return false;"
+            [{* Plain anchor with the frame as target, the way the core admin
+                templates and the left menu navigate. A JS assignment to
+                top.basefrm.location silently does nothing when that frame is
+                missing, because href="#" then wins. *}]
+            <a href="[{$oViewConf->getSelfLink()}]&cl=heartbeat_apiuser_setup"
+               target="basefrm"
                style="font-weight: bold;">[{oxmultilang ident="OXSHEARTBEAT_MODULE_CONFIG_HINT_LINK"}]</a>.
         </p>
     </div>
