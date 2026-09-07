@@ -8,8 +8,13 @@
 
     Do not write the parent tag inside a comment: the block prefilter replaces
     every occurrence in this file, comments included, before smarty strips them.
+
+    The module id is compared through getEditObjectId(), which every admin
+    controller carries, and not through a method of this module's own
+    ModuleConfiguration extension: whoever renders module_config.tpl must be
+    able to answer it. Same condition as the 7.x twig extension.
 *}]
-[{if $oView->isModuleActivated()}]
+[{if $oView->getEditObjectId() == 'oxsheartbeat'}]
     <div style="margin-bottom: 20px; padding: 15px; background: #e3f2fd; border: 1px solid #2196f3; border-radius: 4px;">
         <p style="margin: 0;">
             [{oxmultilang ident="OXSHEARTBEAT_MODULE_CONFIG_HINT"}]
