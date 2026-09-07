@@ -103,11 +103,16 @@ class TemplateExtensionsTest extends TestCase
      */
     private static function readBlockBody(string $path, string $name): ?string
     {
+        // Twig comments are dropped first: a commented out parent() call would
+        // satisfy the assertion while the block renders without it.
+        $content = (string) preg_replace('/\{#.*?#\}/s', '', (string) file_get_contents($path));
+
+        // [-~] covers the whitespace control modifiers, {%- block ... -%}.
         $pattern = sprintf(
-            '/\{%%\s*block\s+%s\s*%%\}(.*?)\{%%\s*endblock(?:\s+[A-Za-z0-9_]+)?\s*%%\}/s',
+            '/\{%%[-~]?\s*block\s+%s\s*[-~]?%%\}(.*?)\{%%[-~]?\s*endblock(?:\s+[A-Za-z0-9_]+)?\s*[-~]?%%\}/s',
             preg_quote($name, '/')
         );
 
-        return preg_match($pattern, (string) file_get_contents($path), $matches) === 1 ? $matches[1] : null;
+        return preg_match($pattern, $content, $matches) === 1 ? $matches[1] : null;
     }
 }
