@@ -1,10 +1,13 @@
 [{*
     Extends the core block "admin_module_config_form" of module_config.tpl.
 
-    The core block contains the settings form of EVERY module, so
-    [{$smarty.block.parent}] below is mandatory: without it this block replaces
+    The core block contains the settings form of EVERY module, so the parent
+    call at the end of this file is mandatory: without it this block replaces
     the form with its own output and no module can be configured in the admin
-    any more. Only add markup around the parent call, never instead of it.
+    any more. Only add markup around that call, never instead of it.
+
+    Do not write the parent tag inside a comment: the block prefilter replaces
+    every occurrence in this file, comments included, before smarty strips them.
 *}]
 [{if $oView->isModuleActivated()}]
     <div style="margin-bottom: 20px; padding: 15px; background: #e3f2fd; border: 1px solid #2196f3; border-radius: 4px;">

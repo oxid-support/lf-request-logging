@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
-- The module settings page in the admin area showed no input fields at all, for any installed module. The module registered a template block for `module_config.tpl` that pointed at an empty file, which replaced the core settings form with nothing. The block renders the core form again and puts a hint above it: the Heartbeat settings live in the left menu under "OXS :: Heartbeat", with a link to the "API User" page.
+- The module settings page in the admin area showed no input fields at all, for any installed module. The module registered a template block for `module_config.tpl` that pointed at an empty file, which replaced the core settings form with nothing. The block renders the core form again and puts a hint above it: the Heartbeat settings live in the left menu under "OXS :: Heartbeat", with a link to the "API User" page. Note when updating: block files are spliced into the compiled template, and smarty only checks the mtime of the main template, so clear `source/tmp` or reactivate the module after updating; otherwise the cached template keeps the empty block.
 
 ## [4.1.0] - 2026-07-14
 

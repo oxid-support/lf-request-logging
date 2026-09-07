@@ -27,9 +27,9 @@ class MetadataBlocksTest extends TestCase
         $this->assertFileExists($path, sprintf('Block file for %s/%s is missing', $template, $block));
         $this->assertNotSame(
             '',
-            trim((string) file_get_contents($path)),
+            self::readWithoutComments($path),
             sprintf(
-                'Block file %s is empty, which replaces the core block "%s" of %s with nothing',
+                'Block file %s has no template code, which replaces the core block "%s" of %s with nothing',
                 $file,
                 $block,
                 $template
@@ -53,7 +53,7 @@ class MetadataBlocksTest extends TestCase
 
         $this->assertStringContainsString(
             '$smarty.block.parent',
-            (string) file_get_contents(self::MODULE_ROOT . '/' . $file),
+            self::readWithoutComments(self::MODULE_ROOT . '/' . $file),
             sprintf('%s must render $smarty.block.parent, otherwise no module can be configured', $file)
         );
     }
@@ -73,7 +73,7 @@ class MetadataBlocksTest extends TestCase
 
         $this->assertStringContainsString(
             '$smarty.block.parent',
-            (string) file_get_contents(self::MODULE_ROOT . '/' . $file),
+            self::readWithoutComments(self::MODULE_ROOT . '/' . $file),
             sprintf('%s must render $smarty.block.parent, otherwise the admin menu is empty', $file)
         );
     }
@@ -112,6 +112,19 @@ class MetadataBlocksTest extends TestCase
         $metadata = self::readMetadata();
 
         return $metadata['blocks'] ?? [];
+    }
+
+    /**
+     * Smarty comments must not count as template code here. The block prefilter
+     * replaces every parent tag in the file before smarty strips comments, so a
+     * tag inside a comment is both a duplicate injection and a test that passes
+     * while the real call is gone.
+     */
+    private static function readWithoutComments(string $path): string
+    {
+        $content = (string) file_get_contents($path);
+
+        return trim((string) preg_replace('/\\[\\{\\*.*?\\*\\}\\]/s', '', $content));
     }
 
     private static function readMetadata(): array
