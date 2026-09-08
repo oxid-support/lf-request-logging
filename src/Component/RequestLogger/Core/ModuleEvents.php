@@ -10,11 +10,13 @@ declare(strict_types=1);
 namespace OxidSupport\Heartbeat\Component\RequestLogger\Core;
 
 use OxidEsales\Eshop\Core\Registry;
+use OxidEsales\EshopCommunity\Internal\Container\ContainerBuilderFactory;
 use OxidEsales\EshopCommunity\Internal\Container\ContainerFactory;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\ApiUserProvisioningServiceInterface;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\SetupTokenServiceInterface;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\TokenInvalidatorInterface;
 use OxidSupport\Heartbeat\Module\Module;
+use Psr\Container\ContainerInterface;
 
 final class ModuleEvents
 {
@@ -32,7 +34,7 @@ final class ModuleEvents
         self::regenerateViews();
         self::clearCache();
 
-        $container = ContainerFactory::getInstance()->getContainer();
+        $container = self::buildContainerWithModuleServices();
 
         // Create the api group, the service user and the group membership for
         // the current shop. Idempotent, runs on every activation, and replaces
@@ -65,6 +67,29 @@ final class ModuleEvents
             // deactivation flow itself. The tokens become useless without the
             // module routes anyway.
         }
+    }
+
+    /**
+     * Compiles a fresh container from the current generated_services.yaml instead of
+     * asking ContainerFactory for one.
+     *
+     * The activating request booted with the container that was cached while this
+     * module was still inactive, so that container has none of the module's services.
+     * The core resets ContainerFactory once the module's services.yaml is registered,
+     * but the reset only deletes the cache file: FilesystemContainerCache::get() loads
+     * the file with include_once, so when a concurrent request rewrites it before this
+     * hook runs (the window is the view regeneration above), this process gets a new
+     * instance of the stale ProjectServiceContainer class declared at boot, and
+     * "You have requested a non-existent service" follows. ContainerFactory::resetContainer()
+     * right before getContainer() only narrows that window. Compiling here reads the
+     * yaml directly and never touches the cache file or that class.
+     */
+    private static function buildContainerWithModuleServices(): ContainerInterface
+    {
+        $container = (new ContainerBuilderFactory())->create()->getContainer();
+        $container->compile();
+
+        return $container;
     }
 
     private static function regenerateViews(): void
