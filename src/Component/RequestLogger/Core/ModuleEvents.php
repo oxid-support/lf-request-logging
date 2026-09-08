@@ -31,7 +31,10 @@ final class ModuleEvents
         // (schema is an operator/pipeline concern, see OXS-3066). The module
         // ships no migrations anymore; the api user, its group and the group
         // membership are seeded below in the current shop context. See OXS-3046.
-        self::regenerateViews();
+        // For the same reason the views are deliberately not regenerated here:
+        // the module changes no schema, so there is nothing for DbMetaDataHandler
+        // to pick up, and the call cost every activation a view rebuild per shop.
+        // See OXS-3375.
         self::clearCache();
 
         $container = self::buildContainerWithModuleServices();
@@ -78,8 +81,8 @@ final class ModuleEvents
      * The core resets ContainerFactory once the module's services.yaml is registered,
      * but the reset only deletes the cache file: FilesystemContainerCache::get() loads
      * the file with include_once, so when a concurrent request rewrites it before this
-     * hook runs (the window is the view regeneration above), this process gets a new
-     * instance of the stale ProjectServiceContainer class declared at boot, and
+     * hook runs, this process gets a new instance of the stale ProjectServiceContainer
+     * class declared at boot, and
      * "You have requested a non-existent service" follows. ContainerFactory::resetContainer()
      * right before getContainer() only narrows that window. Compiling here reads the
      * yaml directly and never touches the cache file or that class.
@@ -90,11 +93,6 @@ final class ModuleEvents
         $container->compile();
 
         return $container;
-    }
-
-    private static function regenerateViews(): void
-    {
-        oxNew(\OxidEsales\Eshop\Core\DbMetaDataHandler::class)->updateViews();
     }
 
     private static function clearCache(): void

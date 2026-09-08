@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Module activation no longer regenerates the database views. The module ships no schema of its own, so there was nothing for the view rebuild to pick up, and it cost roughly half a second on every activation, on Enterprise once per subshop. (OXS-3375)
+
 ### Fixed
 - Activating the module could abort with "You have requested a non-existent service", because the activation hook took the container from the cache file that a concurrent request had just rewritten, which hands the process the stale container class it booted with.
 
