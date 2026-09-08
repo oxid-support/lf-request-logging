@@ -9,7 +9,6 @@ declare(strict_types=1);
 
 namespace OxidSupport\Heartbeat\Component\RequestLogger\Core;
 
-use OxidEsales\Eshop\Core\Registry;
 use OxidEsales\EshopCommunity\Internal\Container\ContainerBuilderFactory;
 use OxidEsales\EshopCommunity\Internal\Container\ContainerFactory;
 use OxidSupport\Heartbeat\Component\ApiUser\Service\ApiUserProvisioningServiceInterface;
@@ -35,7 +34,12 @@ final class ModuleEvents
         // the module changes no schema, so there is nothing for DbMetaDataHandler
         // to pick up, and the call cost every activation a view rebuild per shop.
         // See OXS-3375.
-        self::clearCache();
+        // The caches are not cleared here either: the core invalidates the module
+        // caches on this very event (InvalidateModuleCacheEventSubscriber on
+        // FinalizingModuleActivationEvent, FilesystemModuleCache::invalidate), which
+        // covers the shop's template cache, the language, menu and module-variable
+        // caches and the module path cache, more than the module ever did.
+        // See OXS-3376.
 
         $container = self::buildContainerWithModuleServices();
 
@@ -93,18 +97,5 @@ final class ModuleEvents
         $container->compile();
 
         return $container;
-    }
-
-    private static function clearCache(): void
-    {
-        $tmpDir = realpath(Registry::getConfig()->getConfigParam('sCompileDir'));
-
-        Registry::getUtils()->commitFileCache();
-
-        $files = array_merge(
-            glob($tmpDir . '/smarty/*.php') ?: [],
-            glob($tmpDir . '/*.txt') ?: []
-        );
-        array_map('unlink', $files);
     }
 }
